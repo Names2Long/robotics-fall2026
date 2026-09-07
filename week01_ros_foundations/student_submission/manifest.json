@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "lab_id": "week01_ros_foundations",
+  "generated_at": "2026-09-07T00:17:03.549425+00:00",
+  "student": {
+    "name": "Ishraq Asil Chowdhury",
+    "email": "ASIL.CHOWDHURY41@stu-mail.hunter.cuny.edu"
+  },
+  "completed_missions": [
+    "mission_1",
+    "mission_2",
+    "mission_3"
+  ],
+  "checked_evidence_ids": {
+    "mission_1": "1e85e9d2c78c12ef",
+    "mission_2": "9c798df261ea2ec8",
+    "mission_3": "665a55953dfaffec"
+  },
+  "files": [
+    ".gitkeep",
+    "autosave/responses.json",
+    "autosave/responses.md",
+    "final_reflection.md",
+    "foundations.md",
+    "mission_1/explanation.md",
+    "mission_1/latest_run.json",
+    "mission_1/ros_system_diagram.md",
+    "mission_1/submission.json",
+    "mission_2/explanation.md",
+    "mission_2/latest_run.json",
+    "mission_2/submission.json",
+    "mission_3/explanation.md",
+    "mission_3/latest_run.json",
+    "mission_3/source/package.xml",
+    "mission_3/source/setup.cfg",
+    "mission_3/source/setup.py",
+    "mission_3/source/test/test_decision.py",
+    "mission_3/source/test/test_student_decision.py",
+    "mission_3/source/week01_behavior/decision.py",
+    "mission_3/source/week01_behavior/obstacle_guard.py",
+    "mission_3/submission.json",
+    "student.json"
+  ]
+}

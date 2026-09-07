@@ -1,0 +1,93 @@
+{
+  "evidence_id": "665a55953dfaffec",
+  "behavior": {
+    "schema_version": 1,
+    "captured_at": "2026-09-06T23:32:15.263573+00:00",
+    "unit_tests_passed": true,
+    "unit_test_output": "test_clear_path_moves (test_decision.DecisionTests.test_clear_path_moves) ... ok\ntest_close_obstacle_stops (test_decision.DecisionTests.test_close_obstacle_stops) ... ok\ntest_empty_front_sector_is_missing (test_decision.DecisionTests.test_empty_front_sector_is_missing) ... ok\ntest_forward_output_is_not_amplified (test_decision.DecisionTests.test_forward_output_is_not_amplified) ... ok\ntest_front_sector_ignores_invalid_values (test_decision.DecisionTests.test_front_sector_ignores_invalid_values) ... ok\ntest_missing_measurement_stops (test_decision.DecisionTests.test_missing_measurement_stops) ... ok\ntest_threshold_stops (test_decision.DecisionTests.test_threshold_stops) ... ok\ntest_robot_stops_at_boundary (test_student_decision.StudentDecisionTest.test_robot_stops_at_boundary) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 0.000s\n\nOK\n",
+    "command_bounded": true,
+    "ros_node_verified": true,
+    "scenarios": {
+      "clear_path": {
+        "passed": true,
+        "actual": 0.08,
+        "expected": 0.08
+      },
+      "outside_threshold": {
+        "passed": true,
+        "actual": 0.08,
+        "expected": 0.08
+      },
+      "inside_threshold": {
+        "passed": true,
+        "actual": 0.0,
+        "expected": 0.0
+      },
+      "invalid_scan": {
+        "passed": true,
+        "actual": 0.0,
+        "expected": 0.0
+      },
+      "stale_scan": {
+        "passed": true,
+        "actual": 0.0,
+        "expected": 0.0
+      }
+    }
+  },
+  "source": {
+    "week01_behavior/decision.py": "8cb94c070ce97f7cc6346e13d18e9071c5e051c32ce51b9426ebca56cc08d0ea",
+    "test/test_student_decision.py": "9ec27c739db9a6ee03acf9520431d96232f3e226175326354dd859be778e7528"
+  },
+  "check": [
+    {
+      "id": "implementation",
+      "label": "Both decision functions implemented",
+      "passed": true,
+      "actual": "complete",
+      "expected": "complete"
+    },
+    {
+      "id": "student_test",
+      "label": "Student-created unit test present",
+      "passed": true,
+      "actual": "complete",
+      "expected": "complete"
+    },
+    {
+      "id": "tests",
+      "label": "All unit tests pass",
+      "passed": true,
+      "actual": true,
+      "expected": "true"
+    },
+    {
+      "id": "scenarios",
+      "label": "All five behavior situations pass",
+      "passed": true,
+      "actual": 5,
+      "expected": "5/5"
+    },
+    {
+      "id": "bounded",
+      "label": "Forward command remains within the safe limit",
+      "passed": true,
+      "actual": true,
+      "expected": "true"
+    },
+    {
+      "id": "node",
+      "label": "Obstacle guard verified as a running ROS 2 node",
+      "passed": true,
+      "actual": true,
+      "expected": "true"
+    },
+    {
+      "id": "explanations",
+      "label": "Three system explanations completed",
+      "passed": true,
+      "actual": 3,
+      "expected": "3/3"
+    }
+  ]
+}
