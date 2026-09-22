@@ -11,8 +11,8 @@ class AssignmentTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory)
             with patch("lab.ai_log.submission_root",return_value=root):
-                lock_original("student","specification","prompt","original output")
+                lock_original("student","specification","prompt","original output", "original code")
                 self.assertTrue(load_lock()["integrity_valid"])
-                (root/"mission_3"/"ai"/"original_output.txt").write_text("changed",encoding="utf-8")
+                (root/"mission_3"/"ai"/"original_source.py").write_text("changed",encoding="utf-8")
                 self.assertFalse(load_lock()["integrity_valid"])
 if __name__=="__main__": unittest.main()

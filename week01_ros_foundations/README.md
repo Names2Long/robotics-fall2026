@@ -23,52 +23,40 @@ Native Ubuntu 24.04 with ROS 2 Jazzy remains a supported performance fallback. N
 
 The ROS packages are deliberately separated from the Streamlit application. ROS writes machine-readable graph, timing, and behavior evidence to `runtime/evidence/`; Streamlit reads that evidence and creates the durable `student_submission/` record.
 
-## One-time student setup — Windows, macOS, or Linux
+## Set up the shared ROS 2 environment
 
-Follow the complete platform instructions in [`../ROS_DOCKER_SETUP.md`](../ROS_DOCKER_SETUP.md). In summary:
+Before starting Week 1, follow the platform-specific instructions in the [Shared ROS 2 Course Environment setup guide](../ROS_DOCKER_SETUP.md). That setup is completed once and reused for every ROS-based lab.
 
-1. Install Docker Desktop on Windows/macOS, or Docker Engine plus Compose on Linux.
-2. Clone this repository.
-3. From the repository root, build the shared image and all six ROS workspaces.
+## Run the lab after initial setup
+
+Start or reopen Week 1 from the repository root on the host computer.
 
 Windows PowerShell:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\ros_course.ps1 setup
-.\scripts\ros_course.ps1 lab week01_ros_foundations
+powershell -ExecutionPolicy Bypass -File .\scripts\ros_course.ps1 lab week01_ros_foundations
 ```
+
+Using `-ExecutionPolicy Bypass` applies only to this PowerShell process and prevents Windows from blocking the course script.
 
 macOS/Linux:
 
 ```bash
-chmod +x scripts/ros_course.sh
-./scripts/ros_course.sh setup
 ./scripts/ros_course.sh lab week01_ros_foundations
 ```
 
-Open the browser desktop at `http://localhost:6080/vnc.html?autoconnect=1&resize=remote` and the guide at `http://localhost:8501`. The first command downloads the course environment and builds all later ROS labs; do not repeat it every week.
+After the command confirms that Week 1 has started, open both pages:
 
-Inside the browser desktop's Week 1 terminal, verify the environment:
+- [Week 1 lab guide](http://localhost:8501)
+- [Week 1 virtual desktop](http://localhost:6080/vnc.html?autoconnect=1&resize=remote)
+
+Inside the Week 1 terminal in the virtual desktop, verify the environment:
 
 ```bash
 bash scripts/course_preflight.sh
 ```
 
-## Run the lab after initial setup
-
-Start or reopen Week 1 from the host:
-
-```powershell
-.\scripts\ros_course.ps1 lab week01_ros_foundations
-```
-
-or on macOS/Linux:
-
-```bash
-./scripts/ros_course.sh lab week01_ros_foundations
-```
-
-In the browser desktop terminal:
+When the guide directs you to start the TurtleBot simulation, run:
 
 ```bash
 bash scripts/launch_lab.sh
@@ -92,7 +80,9 @@ bash scripts/evaluate_behavior.sh
 
 The evaluator exits unsuccessfully until the student implementation passes all required safety scenarios.
 
-## Verification for maintainers
+## Verification for maintainers only
+
+Students do not need to run the commands in this section. Students should follow the Streamlit guide at <http://localhost:8501>, which presents the required commands in order and explains the expected result.
 
 The application and mission validators can be checked without ROS:
 
@@ -132,13 +122,16 @@ student_submission/
 └── manifest.json
 ```
 
-Students submit their individual Git commit:
+An individual Git commit is a saved snapshot of one student's completed lab in that student's personal GitHub fork. It is not a separate file type. After the guide says the submission is complete, open PowerShell or Terminal on the host computer, change to the repository root, and run:
 
 ```bash
-git add student_submission ros2_ws/src/week01_behavior
+git status
+git add week01_ros_foundations/student_submission week01_ros_foundations/ros2_ws/src/week01_behavior
 git commit -m "Submit Week 1 ROS foundations lab"
-git push
+git push origin main
 ```
+
+Then open the fork on GitHub, select the new commit, and copy its URL. Submit that commit URL through the course submission system. The URL identifies the exact version being submitted and keeps the work separate from other students' submissions.
 
 ## Required final reflection
 

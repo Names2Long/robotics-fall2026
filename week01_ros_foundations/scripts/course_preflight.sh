@@ -7,5 +7,6 @@ cd "$LAB_ROOT/ros2_ws" || exit 1
 colcon build --symlink-install || exit 1
 source install/setup.bash
 set -u
+export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-24}"
 export WEEK01_EVIDENCE_DIR="$LAB_ROOT/runtime/evidence"
 python3 "$LAB_ROOT/scripts/preflight.py"

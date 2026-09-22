@@ -15,8 +15,18 @@ def transform_dict(t): return {"translation":{"x":t.translation.x,"y":t.translat
 class Probe(Node):
     def __init__(self): super().__init__("course_frame_probe"); self.buffer=Buffer(); self.listener=TransformListener(self.buffer,self)
     def capture(self):
-        base=self.buffer.lookup_transform("base_link","base_scan",Time()).transform; odom=self.buffer.lookup_transform("odom","base_scan",Time()).transform
-        payload={"schema_version":1,"captured_at":datetime.now(timezone.utc).isoformat(),"frames":["odom","base_link","base_scan"],"frame_chain":["odom","base_link","base_scan"],"transforms":{"base_scan_to_base_link":transform_dict(base),"base_scan_to_odom":transform_dict(odom)},"point_prompts":{"sensor_point_in_base":"Transform point (1.0, 0.0) from base_scan to base_link.","sensor_point_in_odom":"Transform point (1.0, 0.0) from base_scan to odom."},"transformed_points":{"sensor_point_in_base":transform_point(base,1.0,0.0),"sensor_point_in_odom":transform_point(odom,1.0,0.0)}}
+        scan=self.buffer.lookup_transform("base_link","base_scan",Time()).transform
+        rear=self.buffer.lookup_transform("base_link","rear_camera_link",Time()).transform
+        hall=self.buffer.lookup_transform("base_link","hall_camera",Time()).transform
+        payload={"schema_version":2,"captured_at":datetime.now(timezone.utc).isoformat(),
+                 "frames":["odom","base_link","base_scan","rear_camera_link","hall_camera"],
+                 "frame_chain":["hall_camera","odom","base_link","base_scan","rear_camera_link"],
+                 "transforms":{"base_scan_to_base_link":transform_dict(scan),
+                    "rear_camera_to_base_link":transform_dict(rear),"hall_camera_to_base_link":transform_dict(hall)},
+                 "point_prompts":{"hall_camera_point":"Transform point (0.5, 0.0, 0.0) from hall_camera to base_link."},
+                 "transformed_points":{"scan_point_in_base":transform_point(scan,1.0,0.0),
+                    "rear_camera_point_in_base":transform_point(rear,1.0,0.0),
+                    "hall_camera_point_in_base":transform_point(hall,0.5,0.0)}}
         path=output_dir()/"frame_snapshot.json"; atomic_json(path,payload); return path
 def main(args=None):
     rclpy.init(args=args); node=Probe(); deadline=time.monotonic()+10
@@ -28,4 +38,3 @@ def main(args=None):
         raise RuntimeError("Required transforms were not available")
     finally: node.destroy_node(); rclpy.shutdown()
 if __name__=="__main__": main()
-

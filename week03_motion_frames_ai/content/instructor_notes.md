@@ -3,9 +3,9 @@
 ## Intended duration
 
 - Motion-model introduction: 15 minutes
-- Mission 1: 35–45 minutes
-- Mission 2: 35–45 minutes
-- Mission 3: 60–90 minutes, with outside-class completion expected
+- Mission 1: 35 to 45 minutes
+- Mission 2: 35 to 45 minutes
+- Mission 3: 60 to 90 minutes, with outside-class completion expected
 - Final synthesis: 10 minutes
 
 ## Assessment priorities
@@ -40,4 +40,3 @@
 5. Interrupt a pattern node and confirm a zero command is published.
 6. Confirm the AI lock cannot be overwritten through ordinary app use.
 7. Inspect a final submission from a clean clone.
-

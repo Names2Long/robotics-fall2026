@@ -10,6 +10,7 @@ from pathlib import Path
 import rclpy
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 
 
@@ -53,7 +54,6 @@ class TimedTwist(Node):
             raise ValueError("Requested command exceeds course limits")
         self.publisher = self.create_publisher(Twist, "/student_cmd_vel", 10)
         self.create_subscription(Odometry, "/odom", self.on_odom, 10)
-        self.timer = self.create_timer(0.05, self.tick)
         self.latest_pose = None
         self.start_pose = None
         self.end_pose = None
@@ -61,7 +61,6 @@ class TimedTwist(Node):
         self.started_at_utc = None
         self.stopped_at = None
         self.stopped_at_utc = None
-        self.settle_started_at = None
         self.observed_path_length = 0.0
         self.last_path_pose = None
         self.done = False
@@ -82,32 +81,31 @@ class TimedTwist(Node):
         if self.started_at is not None:
             self.last_path_pose = dict(pose)
 
-    def tick(self) -> None:
+    def begin(self) -> None:
         if self.latest_pose is None:
-            return
-        if self.started_at is None:
-            self.started_at = time.monotonic()
-            self.started_at_utc = datetime.now(timezone.utc).isoformat()
-            self.start_pose = dict(self.latest_pose)
-            self.last_path_pose = dict(self.latest_pose)
-            self.get_logger().info(f"Starting {self.trial_type} for {self.duration:.2f}s")
-        elapsed = time.monotonic() - self.started_at
-        if elapsed < self.duration:
-            message = Twist()
-            message.linear.x = self.linear_x
-            message.angular.z = self.angular_z
-            self.publisher.publish(message)
-            return
+            raise RuntimeError("No odometry received")
+        self.started_at = time.monotonic()
+        self.started_at_utc = datetime.now(timezone.utc).isoformat()
+        self.start_pose = dict(self.latest_pose)
+        self.last_path_pose = dict(self.latest_pose)
+        self.get_logger().info(f"Starting {self.trial_type} for {self.duration:.2f}s")
+
+    def publish_motion(self) -> None:
+        message = Twist()
+        message.linear.x = self.linear_x
+        message.angular.z = self.angular_z
+        self.publisher.publish(message)
+
+    def publish_stop(self) -> None:
         self.publisher.publish(Twist())
         if self.stopped_at is None:
             self.stop_sent = True
             self.stopped_at = time.monotonic()
             self.stopped_at_utc = datetime.now(timezone.utc).isoformat()
-            self.settle_started_at = self.stopped_at
-            return
-        if time.monotonic() - self.settle_started_at >= 0.5:
-            self.end_pose = dict(self.latest_pose)
-            self.done = True
+
+    def finish(self) -> None:
+        self.end_pose = dict(self.latest_pose or self.start_pose)
+        self.done = True
 
     def result(self) -> dict:
         start = self.start_pose or {"x": 0.0, "y": 0.0, "theta": 0.0}
@@ -152,18 +150,38 @@ def main(args=None) -> None:
     rclpy.init(args=args)
     node = TimedTwist()
     try:
-        deadline = time.monotonic() + node.duration + 10.0
-        while rclpy.ok() and not node.done and time.monotonic() < deadline:
+        odometry_deadline = time.monotonic() + 10.0
+        while rclpy.ok() and node.latest_pose is None and time.monotonic() < odometry_deadline:
             rclpy.spin_once(node, timeout_sec=0.1)
-        node.publisher.publish(Twist())
-        if not node.done:
-            raise RuntimeError("No odometry received or trial timed out")
+        if node.latest_pose is None:
+            raise RuntimeError("No odometry received within 10 seconds")
+
+        node.begin()
+        motion_deadline = node.started_at + node.duration
+        while rclpy.ok() and time.monotonic() < motion_deadline:
+            node.publish_motion()
+            rclpy.spin_once(node, timeout_sec=0.05)
+        if not rclpy.ok():
+            raise ExternalShutdownException()
+
+        node.publish_stop()
+        settle_deadline = time.monotonic() + 0.5
+        while rclpy.ok() and time.monotonic() < settle_deadline:
+            rclpy.spin_once(node, timeout_sec=0.05)
+        if not rclpy.ok():
+            raise ExternalShutdownException()
+
+        node.finish()
         path = append_result(node.result())
         node.get_logger().info(f"Saved trial to {path}")
+    except ExternalShutdownException:
+        pass
     finally:
-        node.publisher.publish(Twist())
+        if rclpy.ok():
+            node.publish_stop()
         node.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == "__main__":

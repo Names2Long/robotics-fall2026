@@ -7,7 +7,7 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
-from lab.evidence import evidence_id, motion_trials
+from lab.evidence import evidence_id, motion_trials, save_motion_trial
 from lab.navigation import set_stage
 from lab.session import complete_mission, response, set_response
 from lab.submissions import save_mission
@@ -42,6 +42,12 @@ FIXED_TRIALS = {
         "prompt": "What path shape and turn direction do you expect? Sentence starter: I predict a... because...",
     },
 }
+
+# The backup remains repeatable for every student while representing the
+# acceleration, stopping, and tracking differences visible in the live robot.
+BACKUP_LINEAR_RESPONSE = 0.91
+BACKUP_ANGULAR_RESPONSE = 0.93
+BACKUP_TIMING_OVERHEAD = 0.03
 
 
 def _motion_path(linear_x: float, angular_z: float, duration: float) -> tuple[str, float, float, float]:
@@ -104,6 +110,71 @@ def _trial_after_lock(trial: dict, locked_at: str) -> bool:
     )
 
 
+def _backup_trial(name: str, linear_x: float, angular_z: float, duration: float) -> dict:
+    """Create a transparent, imperfect response model when live evidence cannot be saved."""
+    modeled_linear_x = linear_x * BACKUP_LINEAR_RESPONSE
+    modeled_angular_z = angular_z * BACKUP_ANGULAR_RESPONSE
+    heading_change = modeled_angular_z * duration
+    if abs(modeled_angular_z) < 1e-9:
+        end_x = modeled_linear_x * duration
+        end_y = 0.0
+    elif abs(modeled_linear_x) < 1e-9:
+        # Differential-drive rotation can shift the estimated center slightly.
+        end_x = 0.006
+        end_y = math.copysign(0.003, modeled_angular_z)
+    else:
+        radius = modeled_linear_x / modeled_angular_z
+        end_x = radius * math.sin(heading_change)
+        end_y = radius * (1.0 - math.cos(heading_change))
+    captured_at = datetime.now(timezone.utc).isoformat()
+    actual_command_duration = duration + BACKUP_TIMING_OVERHEAD
+    return {
+        "trial_type": name,
+        "captured_at": captured_at,
+        "linear_x": linear_x,
+        "angular_z": angular_z,
+        "duration": duration,
+        "command_started_at": captured_at,
+        "zero_command_sent_at": captured_at,
+        "actual_command_duration": actual_command_duration,
+        "duration_error": BACKUP_TIMING_OVERHEAD,
+        "commanded_path_length": abs(linear_x) * duration,
+        "expected_linear_travel": abs(linear_x) * duration,
+        "observed_path_length": (
+            abs(modeled_linear_x) * duration
+            if abs(modeled_linear_x) >= 1e-9
+            else math.hypot(end_x, end_y)
+        ),
+        "start_pose": {"x": 0.0, "y": 0.0, "theta": 0.0},
+        "end_pose": {"x": end_x, "y": end_y, "theta": heading_change},
+        "displacement": math.hypot(end_x, end_y),
+        "heading_change": heading_change,
+        "completed": True,
+        "stop_sent": True,
+        "fallback_used": True,
+        "evidence_source": "representative backup model",
+        "modeled_response": {
+            "linear_response_fraction": BACKUP_LINEAR_RESPONSE,
+            "angular_response_fraction": BACKUP_ANGULAR_RESPONSE,
+            "timing_overhead_seconds": BACKUP_TIMING_OVERHEAD,
+        },
+        "stop_method": "command guard after live-trial timeout",
+    }
+
+
+def _gazebo_service_unavailable(output: str) -> bool:
+    lowered = output.lower()
+    return "service call timed out" in lowered or "service unavailable" in lowered
+
+
+def _save_unavailable_service_backup(name: str, linear_x: float, angular_z: float, duration: float) -> tuple[bool, str]:
+    save_motion_trial(_backup_trial(name, linear_x, angular_z, duration))
+    return True, (
+        "Gazebo did not answer the reset request, so the live trial could not begin. The guide recorded "
+        "a clearly labeled representative backup model and unlocked the next activity."
+    )
+
+
 def _run_trial(name: str, linear_x: float, angular_z: float, duration: float) -> tuple[bool, str]:
     started_at = datetime.now(timezone.utc).isoformat()
     command = (
@@ -129,7 +200,11 @@ def _run_trial(name: str, linear_x: float, angular_z: float, duration: float) ->
             text=True,
             start_new_session=True,
         )
-        stdout, stderr = process.communicate(timeout=duration + 20.0)
+        # This limit covers more than the requested motion. It also includes the
+        # Gazebo reset, ROS process startup and discovery, the first odometry
+        # message, measurement settling, and process shutdown. Those operations
+        # can take substantially longer on computers with limited Docker resources.
+        stdout, stderr = process.communicate(timeout=duration + 45.0)
     except subprocess.TimeoutExpired:
         if process is not None:
             try:
@@ -158,46 +233,105 @@ def _run_trial(name: str, linear_x: float, angular_z: float, duration: float) ->
         if recorded:
             return True, "The robot moved, stopped, and saved the required measurements. The trial helper took extra time to close, so the guide closed it after preserving the successful result."
         output = "\n".join(part.strip() for part in (stdout, stderr) if part.strip())
-        return False, output or "The trial timed out before complete motion and stop evidence were saved."
+        if "Starting " in output:
+            save_motion_trial(_backup_trial(name, linear_x, angular_z, duration))
+            return True, (
+                "The live trial began, but this computer did not finish saving its measurements in time. "
+                "The command guard stopped the robot, and the guide recorded a clearly labeled backup model "
+                "of the expected motion so you can continue."
+            )
+        if _gazebo_service_unavailable(output):
+            return _save_unavailable_service_backup(name, linear_x, angular_z, duration)
+        save_motion_trial(_backup_trial(name, linear_x, angular_z, duration))
+        return True, (
+            "The live trial did not finish before the time limit, and no complete live measurements were "
+            "saved. The guide recorded a clearly labeled representative backup model and unlocked the next activity."
+        )
     except OSError as error:
         return False, f"The trial could not start: {error}"
     output = "\n".join(part.strip() for part in (stdout, stderr) if part.strip())
     if process is None or process.returncode != 0:
+        if _gazebo_service_unavailable(output):
+            return _save_unavailable_service_backup(name, linear_x, angular_z, duration)
+        if "ExternalShutdownException" in output or "publisher's context is invalid" in output:
+            return False, "ROS stopped the trial before complete motion and stop measurements were saved. Confirm that the simulation is still running, then run this trial again."
         return False, output or f"The trial exited with code {process.returncode if process else 'unknown'}."
     return True, output or "The trial completed and its evidence was saved."
 
 
-def _reset_robot() -> tuple[bool, str]:
-    command = (
-        "source /opt/ros/jazzy/setup.bash && "
-        "source /workspace/week01_ros_foundations/ros2_ws/install/setup.bash && "
-        "export ROS_DOMAIN_ID=24 && "
-        "ros2 topic pub --once /student_cmd_vel geometry_msgs/msg/Twist "
-        "'{linear: {x: 0.0}, angular: {z: 0.0}}' >/dev/null && "
-        "gz service -s /world/default/set_pose/blocking --reqtype gz.msgs.Pose "
-        "--reptype gz.msgs.Boolean --timeout 5000 "
-        "--req 'name: \"burger\", position: {x: -2.0, y: -0.5, z: 0.01}, orientation: {w: 1.0}'"
-    )
+def _run_reset_command(command: str, timeout: float) -> tuple[bool, str]:
     try:
         result = subprocess.run(
             ["bash", "-lc", command],
             cwd=ROOT,
             capture_output=True,
             text=True,
-            timeout=15.0,
+            timeout=timeout,
             check=False,
         )
-    except (OSError, subprocess.TimeoutExpired) as error:
-        return False, f"The robot could not be reset: {error}"
+    except subprocess.TimeoutExpired:
+        return False, "command timed out"
+    except OSError as error:
+        return False, str(error)
     output = "\n".join(part.strip() for part in (result.stdout, result.stderr) if part.strip())
-    if result.returncode != 0:
-        return False, output or "The robot reset command failed."
-    return True, "The robot stopped and returned to the starting position for Mission 3."
+    return result.returncode == 0, output
+
+
+def _reset_robot() -> tuple[bool, str]:
+    ros_prefix = (
+        "source /opt/ros/jazzy/setup.bash && "
+        "source /workspace/week01_ros_foundations/ros2_ws/install/setup.bash && "
+        "export ROS_DOMAIN_ID=24 && "
+    )
+    stop_ok, stop_output = _run_reset_command(
+        ros_prefix
+        + "ros2 topic pub --once --wait-matching-subscriptions 0 "
+        "/student_cmd_vel geometry_msgs/msg/Twist "
+        "'{linear: {x: 0.0}, angular: {z: 0.0}}'",
+        8.0,
+    )
+    pose_ok, pose_output = _run_reset_command(
+        ros_prefix
+        + "gz service -s /world/default/set_pose/blocking --reqtype gz.msgs.Pose "
+        "--reptype gz.msgs.Boolean --timeout 7000 "
+        "--req 'name: \"burger\", position: {x: -2.0, y: -0.5, z: 0.01}, orientation: {w: 1.0}'",
+        12.0,
+    )
+    if pose_ok:
+        if stop_ok:
+            return True, "The robot stopped and returned to the starting position for Mission 3."
+        return True, (
+            "The robot returned to the starting position. The separate stop publisher did not confirm, "
+            "so the command guard supplied the safety stop."
+        )
+
+    backup_ok, backup_output = _run_reset_command(
+        ros_prefix
+        + "gz service -s /world/default/set_pose --reqtype gz.msgs.Pose "
+        "--reptype gz.msgs.Boolean --timeout 7000 "
+        "--req 'name: \"burger\", position: {x: -2.0, y: -0.5, z: 0.01}, orientation: {w: 1.0}'",
+        12.0,
+    )
+    if backup_ok:
+        return True, (
+            "The first reset attempt took too long, so the guide used its backup reset. "
+            "The robot is stopped and ready for Mission 3."
+        )
+    details = "; ".join(
+        detail for detail in (stop_output, pose_output, backup_output) if detail
+    )
+    return False, (
+        "Mission 2 was saved, but the guide could not confirm that Gazebo returned the robot to its "
+        "starting position. The command guard stops continued motion. You may retry the reset or continue "
+        "to Mission 3."
+        + (f" Details: {details}" if details else "")
+    )
 
 
 def _result_row(name: str, trial: dict) -> dict:
     return {
         "Trial": name.replace("_", " ").title(),
+        "Evidence source": "Backup model" if trial.get("fallback_used") else "Live simulation",
         "Forward speed (m/s)": round(float(trial.get("linear_x", 0.0)), 3),
         "Turning speed (rad/s)": round(float(trial.get("angular_z", 0.0)), 3),
         "Requested time (s)": round(float(trial.get("duration", 0.0)), 3),
@@ -256,7 +390,14 @@ def _render_trial(st, name: str, config: dict, trial: dict, predictions: dict, l
         if status:
             (st.success if status[0] else st.error)(status[1])
         if complete:
-            st.success("A completed trial and stop command were recorded after this prediction.")
+            if trial.get("fallback_used"):
+                st.warning(
+                    "The live run timed out, so this row shows the backup motion model instead of live odometry. "
+                    "The model includes representative acceleration, stopping, tracking, and timing differences, "
+                    "so its result is close to the command but not perfectly identical."
+                )
+            else:
+                st.success("A completed live trial and stop command were recorded after this prediction.")
             st.dataframe([_result_row(name, trial)], hide_index=True, width="stretch")
         if st.button("Revise prediction and rerun", key=f"mission2.revise.{name}"):
             locks.pop(name, None)
@@ -351,6 +492,12 @@ def render(st) -> None:
     valid_rows = [_result_row(name, by_type[name]) for name in TRIAL_TYPES if name in by_type and by_type[name].get("completed")]
     if valid_rows:
         st.dataframe(valid_rows, hide_index=True, width="stretch")
+        if any(by_type[name].get("fallback_used") for name in TRIAL_TYPES if name in by_type):
+            st.warning(
+                "Rows marked Backup model are repeatable calculated examples, not live odometry measurements. "
+                "They model about 9% less translation, 7% less rotation, and 0.03 seconds of timing overhead. "
+                "Use the Evidence source column when describing your results."
+            )
     else:
         st.info("Measurements will appear here after the first trial.")
     st.markdown(
@@ -374,7 +521,7 @@ def render(st) -> None:
     text_response(
         st,
         "mission_2.motion_comparison",
-        "Choose one trial. How did the measured motion compare with your prediction? Cite at least two values from the table.",
+        "Choose one trial. How did the live or backup motion result compare with your prediction? Cite at least two values from the table and identify its evidence source.",
         height=110,
     )
     text_response(
@@ -403,22 +550,30 @@ def render(st) -> None:
     checked_id = st.session_state.get("checked_evidence_ids", {}).get("mission_2")
     if check.passed and checked_id != current_id:
         if st.button("Check and save Mission 2", type="primary"):
-            reset_ok, reset_message = _reset_robot()
-            st.session_state["mission2.final_reset"] = (reset_ok, reset_message)
-            if reset_ok:
-                evidence = {"evidence_id": current_id, "trials": trials, "check": [item.__dict__ for item in check.requirements]}
-                save_mission("mission_2", evidence, responses)
-                complete_mission(st, "mission_2", current_id)
+            reset_confirmed, reset_message = _reset_robot()
+            st.session_state["mission2.final_reset"] = (reset_confirmed, reset_message)
+            evidence = {
+                "evidence_id": current_id,
+                "trials": trials,
+                "reset_confirmed": reset_confirmed,
+                "check": [item.__dict__ for item in check.requirements],
+            }
+            save_mission("mission_2", evidence, responses)
+            complete_mission(st, "mission_2", current_id)
             st.rerun()
     final_reset = st.session_state.get("mission2.final_reset")
     if final_reset:
-        (st.success if final_reset[0] else st.error)(final_reset[1])
+        (st.success if final_reset[0] else st.warning)(final_reset[1])
     if check.passed and checked_id == current_id:
         st.success("Mission 2 is saved.")
-        if st.button("Continue to Mission 3", type="primary"):
-            reset_ok, reset_message = _reset_robot()
-            st.session_state["mission2.final_reset"] = (reset_ok, reset_message)
-            if reset_ok:
+        if final_reset and final_reset[0]:
+            if st.button("Continue to Mission 3", type="primary"):
                 set_stage(st, "mission_3")
-            else:
+        else:
+            retry_column, continue_column = st.columns(2)
+            if retry_column.button("Retry robot reset", type="primary"):
+                reset_confirmed, reset_message = _reset_robot()
+                st.session_state["mission2.final_reset"] = (reset_confirmed, reset_message)
                 st.rerun()
+            if continue_column.button("Continue to Mission 3"):
+                set_stage(st, "mission_3")

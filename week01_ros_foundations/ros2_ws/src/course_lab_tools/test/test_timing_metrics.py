@@ -1,6 +1,8 @@
 import unittest
 
-from course_lab_tools.timed_twist import timing_metrics
+import rclpy
+
+from course_lab_tools.timed_twist import TimedTwist, timing_metrics
 
 
 class TimingMetricsTests(unittest.TestCase):
@@ -17,3 +19,23 @@ class TimingMetricsTests(unittest.TestCase):
         self.assertIsNone(metrics["duration_error"])
         self.assertAlmostEqual(metrics["expected_linear_travel"], 0.2)
         self.assertAlmostEqual(metrics["commanded_path_length"], 0.2)
+
+    def test_trial_lifecycle_finishes_without_timer_callback(self):
+        rclpy.init()
+        node = TimedTwist()
+        try:
+            node.latest_pose = {"x": 1.0, "y": 2.0, "theta": 0.0}
+            node.begin()
+            node.publish_motion()
+            node.latest_pose = {"x": 1.2, "y": 2.0, "theta": 0.1}
+            node.publish_stop()
+            node.finish()
+            result = node.result()
+            self.assertTrue(result["completed"])
+            self.assertTrue(result["stop_sent"])
+            self.assertEqual(result["start_pose"]["x"], 1.0)
+            self.assertEqual(result["end_pose"]["x"], 1.2)
+        finally:
+            node.destroy_node()
+            if rclpy.ok():
+                rclpy.shutdown()

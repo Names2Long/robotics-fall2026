@@ -7,6 +7,7 @@ cd "$LAB_ROOT/ros2_ws" || exit 1
 colcon build --packages-select week01_behavior --symlink-install || exit 1
 source install/setup.bash
 set -u
+export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-24}"
 colcon test --packages-select week01_behavior
 colcon test-result --verbose
 python3 "$LAB_ROOT/scripts/evaluate_behavior.py"

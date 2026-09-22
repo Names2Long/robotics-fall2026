@@ -73,7 +73,7 @@ def evaluate(trials: list[dict[str, Any]], responses: dict[str, Any]):
     requirements = [
         RequirementResult("predictions", "Four predictions were written before running", prediction_count == 4 and locked_count == 4, f"{prediction_count} written, {locked_count} saved", "4 written and saved"),
         RequirementResult("trials", "Four motion trials completed with a stop command", completed_count == 4, completed_count, "4 of 4"),
-        RequirementResult("motion", "Each trial produced the expected kind of measurable motion", motion_count == 4, motion_count, "4 of 4"),
+        RequirementResult("motion", "Each trial produced the expected kind of live or modeled motion", motion_count == 4, motion_count, "4 of 4"),
         RequirementResult("prediction_order", "Each saved prediction came before its trial", ordered_count == 4, ordered_count, "4 of 4"),
         RequirementResult("limits", "All commands stayed within the course speed limits", safe_commands, "within limits" if safe_commands else "missing or outside limits", "within limits"),
         RequirementResult("modified_settings", "The recorded modified curve matches the selected sliders", modified_matches, "matches" if modified_matches else "run again after changing sliders", "matches"),

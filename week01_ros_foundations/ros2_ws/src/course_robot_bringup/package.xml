@@ -13,5 +13,6 @@
   <exec_depend>rviz2</exec_depend>
   <exec_depend>course_cmd_vel_guard</exec_depend>
   <exec_depend>course_evidence_collector</exec_depend>
+  <test_depend>ament_pytest</test_depend>
   <export><build_type>ament_python</build_type></export>
 </package>

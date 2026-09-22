@@ -14,10 +14,10 @@ setup(
         (f"share/{package_name}/launch", glob("launch/*.launch.py")),
     ],
     install_requires=["setuptools"],
+    tests_require=["pytest"],
     zip_safe=True,
     maintainer="Course Instructor",
     maintainer_email="instructor@example.edu",
     description="Week 1 simulation bringup.",
     license="Apache-2.0",
 )
-

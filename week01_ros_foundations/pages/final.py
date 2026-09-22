@@ -40,9 +40,19 @@ def render(st) -> None:
     st.success("Your individual Git-ready submission is complete.")
     st.code(str(submission_root()))
     st.caption(f"Manifest: {manifest.name}")
+    st.write(
+        "A Git commit is a saved snapshot of your completed lab in your personal fork. Open PowerShell "
+        "or Terminal on your computer, go to the repository root, and run the commands below."
+    )
     st.code(
-        "git add student_submission ros2_ws/src/week01_behavior\n"
+        "git status\n"
+        "git add week01_ros_foundations/student_submission "
+        "week01_ros_foundations/ros2_ws/src/week01_behavior\n"
         "git commit -m \"Submit Week 1 ROS foundations lab\"\n"
-        "git push",
+        "git push origin main",
         language="bash",
+    )
+    st.write(
+        "Open your fork on GitHub, select this new commit, copy its URL, and submit that commit URL "
+        "through the course submission system."
     )

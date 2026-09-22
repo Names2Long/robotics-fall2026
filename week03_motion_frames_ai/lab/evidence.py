@@ -45,3 +45,6 @@ def frame_snapshot() -> dict[str, Any]:
 def ai_evaluation() -> dict[str, Any]:
     return load_json("ai_evaluation.json", {})
 
+
+def camera_evaluation() -> dict[str, Any]:
+    return load_json("camera_evaluation.json", {})

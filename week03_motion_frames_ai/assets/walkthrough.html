@@ -1,0 +1,71 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><style>
+*{box-sizing:border-box}body{margin:0;font:15px system-ui;color:#15354a;background:#f4f9fc}
+.panel{padding:12px;border:1px solid #bed2df;border-radius:12px}canvas{width:100%;height:310px;display:block}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}button{border:1px solid #416880;border-radius:6px;background:white;padding:7px;color:#15354a;cursor:pointer}
+progress{width:100%;accent-color:#087f80;height:12px}#status{min-height:24px}small{color:#425d70}
+</style></head><body><div class="panel">
+<div class="row"><strong id="title"></strong><button id="pause">Pause animation</button></div>
+<canvas id="scene" role="img" aria-label="Top view of robot motion and coordinate axes"></canvas>
+<progress id="progress" max="1" value="0" aria-label="Animation progress"></progress>
+<div id="status" aria-live="polite"></div><small id="legend"></small>
+</div><script>
+(()=>{
+const p=__PAYLOAD__, canvas=document.getElementById('scene'),ctx=canvas.getContext('2d');
+const status=document.getElementById('status'), bar=document.getElementById('progress');
+const isFrames=p.mode==='frames'||p.mode==='robot_frames', robotFrames=p.mode==='robot_frames';
+document.getElementById('title').textContent=robotFrames?'One object, three robot-attached frames':(isFrames?'One target, several coordinate frames':'Top view • browser motion model');
+document.getElementById('legend').textContent=robotFrames?'Red and blue: body axes • Purple: LiDAR axes • Green: rear-camera axes • Orange: object':(isFrames?'Grid spacing: 0.5 m • Red: x • Blue: y • Purple: sensor axes • Orange: target':'Grid spacing: 0.5 m • Forward arrow follows robot +x • L/R identify wheels');
+let width=700,height=310,start=null,paused=false,elapsed=0,last=null;
+const samples=p.samples||[[0,0,0]], duration=p.duration||0;
+const extent=isFrames?3:Math.max(1.35,...samples.map(a=>Math.max(Math.abs(a[0]),Math.abs(a[1]))+.4));
+let scale=90,ox=0,oy=0;
+function screen(x,y){return [ox+x*scale,oy-y*scale]}
+function line(a,b,color='#abc1cf',weight=1){ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=weight;ctx.moveTo(...a);ctx.lineTo(...b);ctx.stroke()}
+function text(t,x,y,color='#15354a'){ctx.fillStyle=color;ctx.font='13px system-ui';ctx.fillText(t,x,y)}
+function arrow(x,y,a,length,color,label){const from=screen(x,y),to=screen(x+length*Math.cos(a),y+length*Math.sin(a));line(from,to,color,2);let ang=-a;ctx.beginPath();ctx.fillStyle=color;ctx.moveTo(...to);ctx.lineTo(to[0]-8*Math.cos(ang-.4),to[1]-8*Math.sin(ang-.4));ctx.lineTo(to[0]-8*Math.cos(ang+.4),to[1]-8*Math.sin(ang+.4));ctx.fill();if(label)text(label,to[0]+4,to[1]-3,color)}
+function axes(x,y,a,label,color){arrow(x,y,a,.42,color||'#b33c36','x');arrow(x,y,a+Math.PI/2,.42,color||'#2457bb','y');const q=screen(x,y);text(label,q[0]+5,q[1]+20,color)}
+function robot(x,y,a,t){const q=screen(x,y);ctx.save();ctx.translate(...q);ctx.rotate(-a);
+ ctx.fillStyle='#cceeee';ctx.strokeStyle='#087f80';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,15,0,Math.PI*2);ctx.fill();ctx.stroke();
+ // Front points right in local coordinates. Left wheel is above, right below.
+ for(const [side,yy,v] of [['L',-19,(p.v||0)-(p.w||0)*.08],['R',13,(p.v||0)+(p.w||0)*.08]]){
+  ctx.fillStyle='#17394b';ctx.fillRect(-12,yy,24,6);ctx.save();ctx.beginPath();ctx.rect(-12,yy,24,6);ctx.clip();ctx.strokeStyle='white';ctx.lineWidth=2;
+  const phase=((v*t*160)%8+8)%8;for(let z=-20;z<24;z+=8){ctx.beginPath();ctx.moveTo(z+phase,yy);ctx.lineTo(z+phase,yy+6);ctx.stroke()}ctx.restore();
+ }
+ ctx.strokeStyle='#087f80';ctx.beginPath();ctx.moveTo(-5,0);ctx.lineTo(24,0);ctx.lineTo(18,-5);ctx.moveTo(24,0);ctx.lineTo(18,5);ctx.stroke();ctx.restore();
+ const l=screen(x-.29*Math.sin(a),y+.29*Math.cos(a)),r=screen(x+.29*Math.sin(a),y-.29*Math.cos(a));text('L',l[0]-4,l[1]);text('R',r[0]-4,r[1]);
+}
+function draw(t){ctx.clearRect(0,0,width,height);ctx.fillStyle='#f4f9fc';ctx.fillRect(0,0,width,height);
+ const low=robotFrames?-1.7:(isFrames?-.5:-extent),high=robotFrames?1.7:(isFrames?3:extent);
+ for(let g=Math.ceil(low*2)/2;g<=high;g+=.5){line(screen(g,low),screen(g,high));line(screen(low,g),screen(high,g));}
+ if(robotFrames){
+  robot(0,0,0,0);axes(0,0,0,'base_link');
+  axes(.2,0,0,'base_scan','#8643ae');
+  axes(-.18,0,Math.PI,'rear_camera_link','#198754');
+  const camera=screen(-.18,0),f1=screen(-.95,.48),f2=screen(-.95,-.48);ctx.beginPath();ctx.moveTo(...camera);ctx.lineTo(...f1);ctx.lineTo(...f2);ctx.closePath();ctx.fillStyle='rgba(25,135,84,.12)';ctx.fill();ctx.strokeStyle='#198754';ctx.stroke();
+  const q=screen(p.target_x,p.target_y);ctx.fillStyle='#c46708';ctx.beginPath();ctx.arc(...q,7,0,7);ctx.fill();text(`Object in base_link (${p.target_x.toFixed(1)}, ${p.target_y.toFixed(1)})`,q[0]+10,q[1]-8,'#9b4b00');
+  status.textContent='The object stays fixed while each frame supplies a different origin and axis direction.';return;
+ }
+ if(isFrames){const a=p.heading*Math.PI/180;axes(0,0,0,'odom');robot(p.x,p.y,a,0);axes(p.x,p.y,a,'');
+ const sx=p.x+.2*Math.cos(a),sy=p.y+.2*Math.sin(a);axes(sx,sy,a,'','#8643ae');
+ const body=screen(p.x,p.y),sensor=screen(sx,sy);
+ line(body,[body[0]-70,body[1]+45],'#15354a');text('base_link',body[0]-100,body[1]+60);
+ line(sensor,[sensor[0]+60,sensor[1]-45],'#8643ae');text('base_scan',sensor[0]+30,sensor[1]-50,'#8643ae');
+ const q=screen(2,1);ctx.fillStyle='#c46708';ctx.beginPath();ctx.arc(...q,6,0,7);ctx.fill();text('Target (2, 1)',q[0]-35,q[1]-15,'#9b4b00');
+ if(p.show_wrong){const wrong=screen(0,3),origin=screen(1,1);ctx.setLineDash([6,4]);line(origin,wrong,'#b33c36',3);ctx.setLineDash([]);line(origin,q,'#087f80',3);ctx.fillStyle='#b33c36';ctx.beginPath();ctx.arc(...wrong,6,0,7);ctx.fill();text('Wrong destination (0, 3)',wrong[0]+10,wrong[1]+5,'#b33c36');}
+ status.textContent=`Robot in odom: (${p.x.toFixed(1)}, ${p.y.toFixed(1)}) m, heading ${p.heading}°`;return;
+ }
+ axes(0,0,0,'Start');const f=duration?Math.min(t/duration,1):0,idx=Math.min(samples.length-1,Math.floor(f*(samples.length-1)));
+ for(let i=1;i<=idx;i++)line(screen(samples[i-1][0],samples[i-1][1]),screen(samples[i][0],samples[i][1]),'#087f80',3);
+ const q=samples[idx];robot(...q,t);bar.value=f;
+ status.textContent=`${t.toFixed(1)} / ${duration.toFixed(1)} s • x ${q[0].toFixed(2)} m • y ${q[1].toFixed(2)} m • heading ${(q[2]*180/Math.PI).toFixed(1)}°`;
+ if(duration&&t>=duration)status.textContent+=p.replay?' • Replay finished':' • Finished: zero velocity requested';
+}
+function resize(){width=canvas.clientWidth;canvas.width=width*devicePixelRatio;canvas.height=height*devicePixelRatio;ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+ scale=robotFrames?Math.min(width/3.8,height/3.8):(isFrames?Math.min(width/3.8,height/(p.show_wrong?4.2:3.5)):Math.min(width/(2*extent+.5),height/(2*extent+.5)));ox=robotFrames?width/2:(isFrames?width/2-1.1*scale:width/2);oy=robotFrames?height/2:(isFrames?height/2+1.1*scale:height/2);draw(elapsed)}
+new ResizeObserver(resize).observe(canvas);
+document.getElementById('pause').hidden=isFrames||!duration;bar.hidden=isFrames;
+document.getElementById('pause').onclick=()=>{paused=!paused;document.getElementById('pause').textContent=paused?'Resume animation':'Pause animation';last=null};
+function tick(now){if(last!==null&&!paused)elapsed=Math.min(duration,elapsed+(now-last)/1000);last=now;draw(elapsed);if(elapsed<duration)requestAnimationFrame(tick);else document.getElementById('pause').disabled=true}
+resize();if(!isFrames&&duration){draw(0);setTimeout(()=>requestAnimationFrame(tick),350)}
+})();
+</script></body></html>

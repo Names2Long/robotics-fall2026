@@ -1,7 +1,8 @@
 # Shared Python environment for every Streamlit guide that accompanies a ROS lab.
 # NumPy remains below 2 for compatibility with ROS Jazzy cv_bridge binaries.
-streamlit>=1.58,<2
+streamlit==1.64.0
+streamlit-drawable-canvas==0.9.3
+pillow>=10,<12
 pandas>=2.0,<3
 matplotlib>=3.8,<4
 numpy>=1.26,<2
-

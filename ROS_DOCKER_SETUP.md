@@ -152,47 +152,13 @@ Successful setup ends with:
 All six ROS lab workspaces built successfully.
 ```
 
-Open the desktop at:
-
-```text
-http://localhost:6080/vnc.html?autoconnect=1&resize=remote
-```
-
-## 4. Start a lab
-
-Windows:
-
-```powershell
-.\scripts\ros_course.ps1 lab week01_ros_foundations
-```
-
-macOS/Linux:
-
-```bash
-./scripts/ros_course.sh lab week01_ros_foundations
-```
-
-This starts the lab guide on <http://localhost:8501> and opens a correctly sourced terminal in the browser desktop. Run the lab's ROS launch command from that terminal.
-
-Replace the directory with the current ROS lab:
-
-```text
-week01_ros_foundations
-week03_motion_frames_ai
-week06_slam_localization
-week08_vision_perception
-week09_planning_navigation
-week11_hri_evaluation
-```
-
-Each launcher assigns the lab a stable ROS domain and sources its built workspace. Do not run two Gazebo-based labs simultaneously.
+After setup succeeds, follow the README inside the assigned lab directory. Each lab README provides its launch command, lab-guide link, virtual-desktop link, and any lab-specific ROS commands.
 
 ## Everyday commands
 
 | Task | Windows | macOS/Linux |
 |---|---|---|
 | Start container | `.\scripts\ros_course.ps1 start` | `./scripts/ros_course.sh start` |
-| Open a lab | `.\scripts\ros_course.ps1 lab LAB` | `./scripts/ros_course.sh lab LAB` |
 | Rebuild workspaces | `.\scripts\ros_course.ps1 build` | `./scripts/ros_course.sh build` |
 | Show status | `.\scripts\ros_course.ps1 status` | `./scripts/ros_course.sh status` |
 | Stop container | `.\scripts\ros_course.ps1 stop` | `./scripts/ros_course.sh stop` |
@@ -290,7 +256,7 @@ Use this sequence before starting each newly released lab:
 6. Merge upstream/main.
 7. Push the merged history to origin.
 8. Run the shared setup command.
-9. Start the new lab.
+9. Follow the new lab's README to start it.
 ```
 
 ## Troubleshooting
@@ -298,6 +264,10 @@ Use this sequence before starting each newly released lab:
 ### Docker command cannot connect
 
 Start Docker Desktop and wait for the engine. On Windows, confirm Docker is using Linux containers and WSL 2.
+
+### `/usr/bin/env: 'bash\r': No such file or directory`
+
+This means an older Windows checkout converted a Linux shell script to CRLF line endings. Download the latest course update and rerun the Windows `setup` command. The updated Docker build and lab launcher normalize these scripts automatically.
 
 ### Port 6080 or 8501 is already in use
 
