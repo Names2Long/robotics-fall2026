@@ -1,0 +1,3 @@
+# Technical synthesis
+
+A robot motion program can be technically correct but still fail in a sociotechnical system if it doesn’t account for how people behave around it. For example, a robot may correctly follow its planned path and stay within its speed limits, but pedestrians in a hallway may still feel uncomfortable if its turns are sudden or if they cant predict where it will move next. This could be important for people with disabilities To evaluate the system properly, I would need real evidence from hallways tests with people, including measurements of passing distance, reaction time, and whether people could understand the robot’s intended path. Feedback from different people would also help determine whether the robots behavior is predictable and accessible.

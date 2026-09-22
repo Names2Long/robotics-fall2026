@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "lab_id": "week03_motion_frames_ai",
+  "mission_id": "mission_2",
+  "saved_at": "2026-09-22T02:43:45.784964+00:00",
+  "evidence": {
+    "evidence_id": "f504359a2557a236",
+    "snapshot": {
+      "source": "reference",
+      "captured_at": "2026-09-22T02:16:23.120272+00:00",
+      "description": "Instructor-defined frame geometry. No live ROS transforms were measured.",
+      "frames": [
+        "odom",
+        "base_link",
+        "base_scan",
+        "rear_camera_link",
+        "hall_camera"
+      ],
+      "transforms": {
+        "base_scan_to_base_link": {
+          "translation": {
+            "x": 0.2,
+            "y": 0.0,
+            "z": 0.14
+          },
+          "yaw": 0.0
+        },
+        "rear_camera_to_base_link": {
+          "translation": {
+            "x": -0.18,
+            "y": 0.0,
+            "z": 0.22
+          },
+          "yaw": 3.141592653589793
+        },
+        "hall_camera_to_base_link": {
+          "translation": {
+            "x": -1.5,
+            "y": 0.5,
+            "z": 1.2
+          },
+          "yaw": -1.5707963267948966
+        }
+      }
+    },
+    "camera_evaluation": {
+      "captured_at": "2026-09-22T02:39:16.165559+00:00",
+      "source_sha256": "4262cd9830888263c720886eba199e20c8ec94b3aa4b224ef0e1289770cfe174",
+      "file_present": true,
+      "unit_tests_passed": true,
+      "test_count": 5,
+      "unit_test_output": "test_rejects_wrong_source_frame (test_camera_transform.CameraTransformTests.test_rejects_wrong_source_frame) ... ok\ntest_source_does_not_publish_motion (test_camera_transform.CameraTransformTests.test_source_does_not_publish_motion) ... ok\ntest_unavailable_transform_returns_none (test_camera_transform.CameraTransformTests.test_unavailable_transform_returns_none) ... ok\ntest_uses_buffer_result_including_rotation (test_camera_transform.CameraTransformTests.test_uses_buffer_result_including_rotation) ... ok\ntest_uses_camera_as_source_and_body_as_target (test_camera_transform.CameraTransformTests.test_uses_camera_as_source_and_body_as_target) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 0.001s\n\nOK\n",
+      "live": {
+        "passed": false,
+        "source": "hall_camera",
+        "target": "base_link",
+        "point": null,
+        "error": ""
+      },
+      "live_passed": false,
+      "source_differs_from_original": true
+    },
+    "live_verification_pending": true,
+    "check": [
+      {
+        "id": "snapshot",
+        "label": "Frame snapshot selected",
+        "passed": true,
+        "actual": "reference",
+        "expected": "live or reference"
+      },
+      {
+        "id": "original",
+        "label": "Initial AI response preserved",
+        "passed": true,
+        "actual": "preserved",
+        "expected": "preserved"
+      },
+      {
+        "id": "file",
+        "label": "Camera transform implementation found",
+        "passed": true,
+        "actual": true,
+        "expected": "true"
+      },
+      {
+        "id": "fresh",
+        "label": "Evaluation matches current implementation",
+        "passed": true,
+        "actual": "current",
+        "expected": "current"
+      },
+      {
+        "id": "tests",
+        "label": "Course camera-transform tests pass",
+        "passed": true,
+        "actual": 5,
+        "expected": ">=5 passing"
+      },
+      {
+        "id": "revision",
+        "label": "Implementation revised from initial AI code",
+        "passed": true,
+        "actual": true,
+        "expected": "true"
+      },
+      {
+        "id": "live",
+        "label": "Live transform verified or documented pending",
+        "passed": true,
+        "actual": "pending",
+        "expected": "verified or documented pending"
+      },
+      {
+        "id": "analysis",
+        "label": "Frame, AI, test, and consequence analysis complete",
+        "passed": true,
+        "actual": "complete",
+        "expected": "complete"
+      }
+    ]
+  }
+}

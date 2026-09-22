@@ -1,0 +1,41 @@
+The alternating-arcs pattern can be created using four forward arc segments. For an arc radius of 0.30 m with a linear speed of 0.15 m/s, the required angular speed is:
+
+angular speed = linear speed / radius = 0.15 / 0.30 = 0.50 rad/s
+
+Each turn is 45 degrees, which is about 0.785 radians. The required duration of each arc is:
+
+duration = angle / angular speed = 0.785 / 0.50 = about 1.57 seconds
+
+Positive angular velocity turns left and negative angular velocity turns right. Therefore, the four angular velocities should be +0.50, -0.50, +0.50, and -0.50 rad/s. The total heading change is zero, so the robot should finish facing its initial direction.
+
+I assume the existing Segment class is already defined in pattern.py and that the course wrapper handles publishing commands and sending the final zero-velocity command.
+
+import math
+
+
+def build_pattern(pattern_name: str) -> list[Segment]:
+    if pattern_name != "alternating_arcs":
+        raise ValueError(f"Unknown pattern: {pattern_name}")
+
+    linear_speed = 0.15
+    angular_speed = 0.50
+    turn_angle = math.pi / 4
+    duration = turn_angle / angular_speed
+
+    return [
+        Segment(linear_x=linear_speed, angular_z=angular_speed, duration=duration),
+        Segment(linear_x=linear_speed, angular_z=-angular_speed, duration=duration),
+        Segment(linear_x=linear_speed, angular_z=angular_speed, duration=duration),
+        Segment(linear_x=linear_speed, angular_z=-angular_speed, duration=duration),
+    ]
+
+I would test that:
+1. build_pattern("alternating_arcs") returns exactly four segments.
+2. All four segments have a positive linear speed of 0.15 m/s.
+3. The angular velocity signs occur in the order +, -, +, -.
+4. Each arc has a radius of abs(linear_x / angular_z) = 0.30 m.
+5. Each segment turns about 0.785 radians using angular_z * duration.
+6. All linear and angular speeds stay within the course limits.
+7. All durations are positive and below 30 seconds, and the total duration is below 60 seconds.
+8. The sum of the four heading changes is approximately 0 radians, so the robot finishes facing its initial direction.
+9. An unknown pattern name raises ValueError.

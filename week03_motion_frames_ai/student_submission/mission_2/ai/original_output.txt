@@ -1,0 +1,31 @@
+You can use ROS 2 TF2 to transform a PointStamped from the hallway camera frame into the robot's base_link frame. The TF buffer stores the transforms between frames, and do_transform_point applies the transform to the point.
+
+import rclpy
+from rclpy.node import Node
+from geometry_msgs.msg import PointStamped
+from tf2_ros import Buffer, TransformListener
+from tf2_geometry_msgs import do_transform_point
+
+
+class PointTransformer(Node):
+    def __init__(self):
+        super().__init__('point_transformer')
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+
+    def transform_point(self, point):
+        try:
+            transform = self.tf_buffer.lookup_transform(
+                'base_link',
+                'hall_camera',
+                rclpy.time.Time()
+            )
+
+            transformed_point = do_transform_point(point, transform)
+            return transformed_point
+
+        except Exception as e:
+            self.get_logger().error(f'Transform failed: {e}')
+            return None
+
+The input point should be a PointStamped containing coordinates from the hallway camera. The code looks up the transform from hall_camera to base_link and applies it to produce the point in the robot's coordinate frame.

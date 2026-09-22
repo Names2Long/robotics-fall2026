@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "lab_id": "week03_motion_frames_ai",
+  "generated_at": "2026-09-22T03:18:13.092098+00:00",
+  "student": {
+    "name": "Ishraq Chowdhury",
+    "email": "ishraq.chowdhury41@stu-mail.hunter.cuny.edu",
+    "course_id": "ishraq.chowdhury41@stu-mail.hunter.cuny.edu"
+  },
+  "completed_missions": [
+    "mission_1",
+    "mission_2",
+    "mission_3"
+  ],
+  "checked_evidence_ids": {
+    "mission_1": "8247685e8df556cc",
+    "mission_2": "f504359a2557a236",
+    "mission_3": "b61471fdc533b203"
+  },
+  "files": [
+    ".gitkeep",
+    "final_reflection.md",
+    "mission_1/explanation.md",
+    "mission_1/latest_run.json",
+    "mission_1/prediction_sketch.png",
+    "mission_1/submission.json",
+    "mission_2/ai/lock.json",
+    "mission_2/ai/original_output.txt",
+    "mission_2/ai/original_source.py",
+    "mission_2/ai/prompt.txt",
+    "mission_2/explanation.md",
+    "mission_2/latest_run.json",
+    "mission_2/source/package.xml",
+    "mission_2/source/setup.cfg",
+    "mission_2/source/setup.py",
+    "mission_2/source/week03_camera_transform/__init__.py",
+    "mission_2/source/week03_camera_transform/camera_transform.py",
+    "mission_2/submission.json",
+    "mission_3/ai/ai_to_final.diff",
+    "mission_3/ai/lock.json",
+    "mission_3/ai/original_output.txt",
+    "mission_3/ai/original_prompt.txt",
+    "mission_3/ai/original_source.py",
+    "mission_3/ai/specification.txt",
+    "mission_3/explanation.md",
+    "mission_3/latest_run.json",
+    "mission_3/source/package.xml",
+    "mission_3/source/setup.cfg",
+    "mission_3/source/setup.py",
+    "mission_3/source/test/test_pattern.py",
+    "mission_3/source/test/test_student_pattern.py",
+    "mission_3/source/week03_pattern/__init__.py",
+    "mission_3/source/week03_pattern/checks.py",
+    "mission_3/source/week03_pattern/pattern.py",
+    "mission_3/source/week03_pattern/pattern_node.py",
+    "mission_3/submission.json",
+    "student.json",
+    "synthesis.md"
+  ],
+  "sha256": {
+    ".gitkeep": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "final_reflection.md": "13d794b3f67753cbec1b7f54a897cc4d0e982725eed2c500fa85c2f30da70b60",
+    "mission_1/explanation.md": "06099a1e770cb94008c9683e3636d71b78bc1e47a49be1397f1ebe4e3117b49f",
+    "mission_1/latest_run.json": "f7e4cc12aa46b83c2398332762db60584b6ede416a8d0ff6a61cc617bc59f960",
+    "mission_1/prediction_sketch.png": "4389cedee669ddffec402fedb1032d02a9a7140249125de06b249f1191721fe7",
+    "mission_1/submission.json": "8347a40702a4b3d3c606cf851a778a35b4c80f8c5cfee784aba71936d07ccced",
+    "mission_2/ai/lock.json": "a2f215f585355794cd64f0e5ef75f735f9ade60b55e04d6deda10e803c934d82",
+    "mission_2/ai/original_output.txt": "fda2e3ae4e644af0d259037919d0063250670c3abd77c07eb6e693ad6532378c",
+    "mission_2/ai/original_source.py": "bf0f9d07a18646d4da8de250e38a31a04477375c68acaf9ad2e6df6de4d6aa1e",
+    "mission_2/ai/prompt.txt": "c915f917d8de292843274b6d62361ffc4b767a2b4f0e18537060b4761918d1e3",
+    "mission_2/explanation.md": "2fc36cbe6088fbeaa6c96b6c761ca7877d2da44e4a1b9b1562ccace7989e0d37",
+    "mission_2/latest_run.json": "2b2fd2a6388c01a2483a00e40ff90f9f7d1176396d0809ed2e95d9e73d90fc4f",
+    "mission_2/source/package.xml": "144d84176dab5dd24fd83e65e55f1f8f8cd76e5980c6298f72328985a1a5068e",
+    "mission_2/source/setup.cfg": "3c16e91e6749add5b2a73042463d0d1934c82bf5c4b64d2fca8e7261524c0461",
+    "mission_2/source/setup.py": "070d58efd54b796ad8aa91a870f27b6ff7eb5d23c3e409340277235d703348c3",
+    "mission_2/source/week03_camera_transform/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "mission_2/source/week03_camera_transform/camera_transform.py": "4262cd9830888263c720886eba199e20c8ec94b3aa4b224ef0e1289770cfe174",
+    "mission_2/submission.json": "6d8ae8a53cc0bc73947acf32260833b6d4c1643ac198fe1d95348db3674e1fdf",
+    "mission_3/ai/ai_to_final.diff": "cba64797608e33dca8566ccfec4f01818b4b5b363980f3681d52be99fc7807a7",
+    "mission_3/ai/lock.json": "13013090f3a9d7d32194112a775d98884e92dfc3f97f2d1a5cfa7e34f752cbbc",
+    "mission_3/ai/original_output.txt": "eb0eff7e6d06fe26b188feb241e2f0eb539024d959b1e447f034161cb7bc7563",
+    "mission_3/ai/original_prompt.txt": "6acb5f7992de79b80696635bd03f07f2c1370f559e22169863ad79e34476a18c",
+    "mission_3/ai/original_source.py": "78ce6d5c2b92775b0cf569235d6b961cd5f050a5097ecca7e25ef530fd16b1c2",
+    "mission_3/ai/specification.txt": "df2c86b854785edc7d79a030915d237e4e3374209932c38b2ce1c8767e9686fc",
+    "mission_3/explanation.md": "8ada9678261b79a39d6c0fc6fc6e847e4b501732b90c5bc4849719784c888a69",
+    "mission_3/latest_run.json": "c8291cb3b30c572a4396d14b3ce4bc16c2f342810b4bff39f2af31009c979112",
+    "mission_3/source/package.xml": "4b7719c766b4279aaa6cc5d4d6a53905de470f3fb5c6fcb27bc6e44cbc3e16a0",
+    "mission_3/source/setup.cfg": "573c0ed273cd7238a09fa72af2e10af20840afbb005acc4be276ed1a257ae6b9",
+    "mission_3/source/setup.py": "d0955e7b5f997f69c5bdc759143c86e7312fa333129c1026d86def61fb496e36",
+    "mission_3/source/test/test_pattern.py": "91466d0ebf6fed346d1cf0bf268082d71546ad7645d9d6c383ffce323c6e139c",
+    "mission_3/source/test/test_student_pattern.py": "8482893273ad1a3a2166bc22487709fa5b1591e71c9784e1a2f1369517096fbf",
+    "mission_3/source/week03_pattern/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "mission_3/source/week03_pattern/checks.py": "b8837ef52ee2ffdd1970df41e1945560703d462e0298ae867c5049ef71a4d373",
+    "mission_3/source/week03_pattern/pattern.py": "079df4ddbd13064af94b93a06c7d5e27db0ba16db342322794fbfe1ff8f40a22",
+    "mission_3/source/week03_pattern/pattern_node.py": "f113668a57527bc8f309af08e504b225472667667658880347fff756b7886466",
+    "mission_3/submission.json": "7d174661240fbf1cee9416b9a06a4006296a534300bdd2f7f738afde9ebd3f35",
+    "student.json": "8872e5cdad4186bde7ed6e1941c872cdb42501142415dd539cffa834795618e9",
+    "synthesis.md": "872907450cc32cf8a6cd00b80064139b83a9710a084080fb833ca0f52b40703b"
+  },
+  "verification": [
+    {
+      "activity": "Mission 1: straight",
+      "evidence": "live",
+      "live_verified": true
+    },
+    {
+      "activity": "Mission 1: turn then drive",
+      "evidence": "live",
+      "live_verified": true
+    },
+    {
+      "activity": "Mission 1: arc",
+      "evidence": "live",
+      "live_verified": true
+    },
+    {
+      "activity": "Mission 2: frames and hallway camera",
+      "evidence": "reference snapshot; transform tests; live pending",
+      "live_verified": false
+    },
+    {
+      "activity": "Mission 3: program",
+      "evidence": "live",
+      "live_verified": true
+    }
+  ],
+  "live_verification_pending": [
+    "Mission 2: frames and hallway camera"
+  ]
+}

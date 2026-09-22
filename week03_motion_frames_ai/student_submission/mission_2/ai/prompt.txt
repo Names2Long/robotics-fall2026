@@ -1,0 +1,48 @@
+Write a ROS 2 python code that converts a point detected by a hallway camera into the robots base_link frame.
+
+Here is some background info:
+
+Using reference frame evidence captured or created at 2026-09-22T02:16:23.120272+00:00.
+
+Relationship
+
+x (m)
+
+y (m)
+
+z (m)
+
+yaw (rad)
+
+LiDAR relative to robot body
+
+0.2000
+
+0.0000
+
+0.1400
+
+0.0000
+
+Rear camera relative to robot body
+
+-0.1800
+
+0.0000
+
+0.2200
+
+3.1420
+
+Fixed hallway camera relative to robot body
+
+-1.5000
+
+0.5000
+
+1.2000
+
+-1.5710
+
+ 
+The two robot-mounted sensor relationships remain fixed. The hallway-camera relationship changes as the robot moves because the camera remains in the environment while base_link moves.
