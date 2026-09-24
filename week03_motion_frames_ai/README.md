@@ -86,6 +86,7 @@ The live runner refreshes the evaluation report after a complete run. Source or 
 
 - Use each form's Save/Check button. Other fields are autosaved after their values reach the guide; **Save progress now** makes that step explicit.
 - The guide restores the saved section, responses, and walkthrough progress after restart. A previous autosave copy is retained for recovery.
+- On a first launch, the guide begins at the introduction with no preserved AI interaction. If it opens on a later mission before you have worked on this lab, stop and contact the instructor.
 - Use the sidebar to revisit opened sections. After edits, check and save the affected mission again.
 - If Docker pauses or the browser disconnects, copy unsent text before refreshing. Resume Docker and reconnect. Work in one guide tab.
 - A failed Mission 1 run retains the prediction. Retry or select labeled modeled evidence. The model uses 92% translation and 93% rotation; these are imposed differences, not measured errors.
@@ -113,6 +114,15 @@ Submit the pushed commit's URL through the course submission channel and ensure 
 ```bash
 python3 app.py --smoke-test
 python3 -m unittest discover -s tests -v
+python3 ../scripts/check_week03_starter.py
 ```
 
 Streamlit must be installed for interface tests. ROS integration also requires the running course container. The student pattern starter deliberately raises `NotImplementedError` until implemented.
+
+The Week 3 starter must contain only `.gitkeep` in its `student_submission/` folder. Run the starter check before publishing Week 3 updates. For instructor trials in the shared checkout, set `WEEK03_SUBMISSION_DIR` to an absolute path outside the repository so the guide writes trial progress there. For example, from the repository root with the course container running:
+
+```bash
+docker compose exec -e WEEK03_SUBMISSION_DIR=/tmp/week03-instructor-trial course-ros course-lab week03_motion_frames_ai
+```
+
+Use a new directory for a fresh instructor trial. Normal student launches continue writing to `week03_motion_frames_ai/student_submission/` for Git submission.

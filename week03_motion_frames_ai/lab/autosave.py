@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -14,6 +15,12 @@ CONTENT_VERSION = 2
 
 
 def submission_root() -> Path:
+    override = os.environ.get("WEEK03_SUBMISSION_DIR", "").strip()
+    if override:
+        path = Path(override).expanduser()
+        if not path.is_absolute():
+            raise ValueError("WEEK03_SUBMISSION_DIR must be an absolute path")
+        return path
     return ROOT / LAB.submission_directory
 
 

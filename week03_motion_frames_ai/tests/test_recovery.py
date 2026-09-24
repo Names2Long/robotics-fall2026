@@ -1,5 +1,6 @@
 from datetime import datetime,timezone,timedelta
 import importlib.util
+import os
 from pathlib import Path
 from types import SimpleNamespace
 import tempfile
@@ -9,6 +10,17 @@ from lab.autosave import save,load_state,restore
 
 
 class AutosaveRecovery(unittest.TestCase):
+    def test_empty_submission_starts_at_intro_without_ai_record(self):
+        from lab.ai_log import load_lock
+        from lab.session import initialize
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {'WEEK03_SUBMISSION_DIR': directory}):
+            fresh=SimpleNamespace(session_state={})
+            initialize(fresh)
+            restore(fresh)
+            self.assertEqual(fresh.session_state['stage'], 'intro')
+            self.assertEqual(fresh.session_state['responses'], {})
+            self.assertEqual(load_lock(), {})
+
     def test_restore_previous_valid_copy(self):
         with tempfile.TemporaryDirectory() as directory,patch('lab.autosave.ROOT',Path(directory)):
             state={'responses':{'answer':'first'},'student':{},'stage':'mission_1','walkthrough.index':3}

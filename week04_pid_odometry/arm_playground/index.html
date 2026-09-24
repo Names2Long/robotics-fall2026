@@ -10,8 +10,8 @@
       --border: #d0d5dd;
       --ink: #182230;
       --muted: #475467;
-      --j1: #0d9488;        /* Joint 1 / shoulder — site teal  */
-      --j2: #e8830c;        /* Joint 2 / elbow    — site amber */
+      --j1: #0d9488;        /* Joint 1 / shoulder - site teal  */
+      --j2: #e8830c;        /* Joint 2 / elbow    - site amber */
       --green: #12b76a;
       --red: #f04438;
     }
@@ -432,7 +432,7 @@
       if (pl) {
         if (posePhase === "hold") {
           const settleNow = Math.max(Math.abs(wrap(tgt1 - th1)), Math.abs(wrap(tgt2 - th2))) * R2D;
-          pl.textContent = settleNow < SETTLE_TOL ? "Holding — settled ✓" : "Holding — still off";
+          pl.textContent = settleNow < SETTLE_TOL ? "Holding - settled ✓" : "Holding - still off";
           pl.style.color = settleNow < SETTLE_TOL ? C_GREEN : C_RED;
         } else {
           pl.textContent = "Moving to pose…";

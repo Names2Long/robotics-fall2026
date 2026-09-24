@@ -1,5 +1,6 @@
 __pycache__/
 *.py[cod]
+**/.venv/
 
 # ROS 2 / colcon generated workspaces
 **/ros2_ws/build/
@@ -8,4 +9,3 @@ __pycache__/
 
 # Lab-generated runtime artifacts
 **/runtime/
-

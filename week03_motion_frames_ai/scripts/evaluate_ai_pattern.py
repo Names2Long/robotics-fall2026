@@ -12,6 +12,7 @@ ROOT=Path(__file__).resolve().parents[1]
 PACKAGE=ROOT/'ros2_ws/src/week03_pattern'
 sys.path[:0]=[str(ROOT),str(PACKAGE)]
 from lab.ai_log import load_lock
+from lab.autosave import submission_root
 from week03_pattern.checks import validate, shape_ok, endpoint, command_at, source_hash
 
 
@@ -60,7 +61,7 @@ def main():
     live=bool(run.get('completed') and run.get('shape_observed') and run.get('final_stop_verified')
               and attempt.get('attempt_id') and run.get('attempt_id')==attempt.get('attempt_id')
               and run.get('pattern')==name and run.get('source_sha256')==signature)
-    original=ROOT/'student_submission/mission_3/ai/original_source.py'
+    original=submission_root()/'mission_3/ai/original_source.py'
     changed=original.exists() and original.read_text(encoding='utf-8').strip()!=(PACKAGE/'week03_pattern/pattern.py').read_text(encoding='utf-8').strip()
     implementation=PACKAGE/'week03_pattern/pattern.py'
     payload={'captured_at':datetime.now(timezone.utc).isoformat(),'pattern':name,

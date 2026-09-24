@@ -366,7 +366,7 @@
       label('CARPET COMPRESSES',wheelCx-80,wheelCy-wheelR-90,wheelCx,wheelCy-wheelR-15,'#c4b5fd');
     }
 
-    bigCallout('The motor pushes the wheel — so it can slip. Every slip means the encoder LIES about how far you moved.',
+    bigCallout('The motor pushes the wheel - so it can slip. Every slip means the encoder LIES about how far you moved.',
       20,20,'#e11d48',W-40);
 
     // counters
@@ -496,7 +496,7 @@
       let driveSpinDeg = chassisDx * rollDriveDegPerPx;
       deadSpinDeg      = chassisDx * rollDeadDegPerPx;
       if(inSlipZone(robotCx)){
-        // drive wheel spins WAY more than it rolls — like a tire on ice
+        // drive wheel spins WAY more than it rolls - like a tire on ice
         const cycle=(t*6)%1;
         const surge = (cycle<0.25) ? 900*speed : 320*speed; // deg/s of extra slip spin
         driveExtraSpinDeg = surge*dt;
@@ -570,13 +570,13 @@
     }
 
     if(phase===0){
-      label('Regular drive wheels — powered by motors',20,60,dwLx,dwY-dwR-6,'#fed7aa');
+      label('Regular drive wheels - powered by motors',20,60,dwLx,dwY-dwR-6,'#fed7aa');
       bigCallout('Watch what we add next: a dead wheel.',
         W-320,60,'#12b76a',300);
     } else if(phase===1){
       const tt=(t-4.8)/4.8;
       if(tt>0.15) label('Small unpowered wheel',W-250,60,deadX+8,deadY,'#bbf7d0');
-      if(tt>0.4) label('Spring — presses it down firmly',W-280,100,deadX+14,(chassisY+deadY)/2,'#86efac');
+      if(tt>0.4) label('Spring - presses it down firmly',W-280,100,deadX+14,(chassisY+deadY)/2,'#86efac');
       if(tt>0.6) label('Its own encoder',W-210,140,deadX+deadR+10,deadY-6,'#c4b5fd');
       if(tt>0.8) label('NO motor connected',30,60,deadX-20,chassisY+20,'#fecaca');
     } else {
@@ -586,7 +586,7 @@
       ctx.strokeStyle='#e11d48'; ctx.lineWidth=2; ctx.stroke();
       ctx.fillStyle='#fecaca'; ctx.font='11px "Segoe UI",sans-serif';
       ctx.textBaseline='top'; ctx.textAlign='left';
-      ctx.fillText('DRIVE WHEEL ENCODER — SLIPS',30,by+6);
+      ctx.fillText('DRIVE WHEEL ENCODER - SLIPS',30,by+6);
       ctx.fillStyle='#fff'; ctx.font='bold 18px "Segoe UI",sans-serif';
       ctx.fillText((ch3DriveEnc/8).toFixed(1)+' cm  (too much)',30,by+24);
 
@@ -594,7 +594,7 @@
       roundRect(W-boxW-20,by,boxW,boxH,8); ctx.fill();
       ctx.strokeStyle='#12b76a'; ctx.lineWidth=2; ctx.stroke();
       ctx.fillStyle='#bbf7d0'; ctx.font='11px "Segoe UI",sans-serif';
-      ctx.fillText('DEAD WHEEL ENCODER — TRUTH',W-boxW-10,by+6);
+      ctx.fillText('DEAD WHEEL ENCODER - TRUTH',W-boxW-10,by+6);
       ctx.fillStyle='#fff'; ctx.font='bold 18px "Segoe UI",sans-serif';
       ctx.fillText((ch3DeadEnc/8).toFixed(1)+' cm  (true)',W-boxW-10,by+24);
 
@@ -645,7 +645,7 @@
         W/2-220,H-110,'#12b76a',440);
       ctx.fillStyle='#cbd5e1'; ctx.font='italic 11px "Segoe UI",sans-serif';
       ctx.textBaseline='top'; ctx.textAlign='center';
-      ctx.fillText('Real robots often use 2 or 3 dead wheels — two for X/Y, one for heading.',W/2,H-32);
+      ctx.fillText('Real robots often use 2 or 3 dead wheels - two for X/Y, one for heading.',W/2,H-32);
       ctx.textAlign='left';
     }
   }

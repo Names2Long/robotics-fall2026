@@ -1,36 +1,14 @@
-# Local-Only Operation
+# Local operation and submission storage
 
-The PID odometry lab should be run on a student's or instructor's own machine.
+Lab 4 runs on the student's computer. It is not intended for shared Streamlit Cloud hosting because each run writes private progress and grading evidence to a local `student_submission/` folder.
 
-## Why It Is Not A Streamlit Cloud App
+The local workflow provides:
 
-Streamlit Community Cloud is useful for demos, but this lab depends on local generated work:
+- one submission directory per repository clone;
+- automatic saving and restart recovery;
+- structured evidence tied to the student's Git history;
+- an individual commit link for submission.
 
-- Students create submission artifacts during a run.
-- Generated files are written to the Git-ready `student_submission/` folder.
-- Hosted Streamlit filesystems are not a reliable long-term place to collect class work.
-- Multiple students using one hosted app would need authentication, per-student storage, and a backend collection service.
+Students start the lab with the operating-system launcher described in the Lab 4 README. After every readiness check passes, they save the final folder, commit `week04_pid_odometry/student_submission/`, push, and submit the individual commit URL.
 
-Without that backend, a hosted app can demonstrate the activity but should not be treated as the source of record for student submissions.
-
-## Recommended Collection Model
-
-Use local execution plus external submission:
-
-1. Student runs the lab locally with `streamlit run ...`.
-2. Student completes the PID and odometry tasks.
-3. Student saves the complete `student_submission/` folder.
-4. Student commits and pushes that folder, then submits the GitHub commit link.
-
-The ZIP export remains available as a backup when a GitHub commit link cannot be used.
-
-## What To Preserve
-
-For grading and feedback, preserve the exported files rather than screenshots alone. The most useful artifacts are:
-
-- machine-readable run metadata, such as `submission.json`
-- the student's explanation, such as `explanation.md`
-- run data, such as `learning_curve.csv`
-- a visual replay, such as `run.gif`
-
-These files let instructors check both the final behavior and the reasoning behind the controller and odometry choices.
+The repository version of `student_submission/` must contain only `.gitkeep`. Generated answers, GIFs, results, and autosaves belong to students and must never ship in the instructor starter repository.

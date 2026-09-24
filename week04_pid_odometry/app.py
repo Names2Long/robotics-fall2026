@@ -1,4 +1,4 @@
-"""Local Streamlit lab for teaching PID control and differential-drive odometry.
+"""Local Streamlit lab for teaching PID control and robot odometry.
 
 Run locally with:
 
@@ -22,6 +22,7 @@ import json
 import math
 import os
 import sys
+import tempfile
 import zipfile
 from dataclasses import dataclass
 from datetime import datetime
@@ -45,7 +46,7 @@ def require(module_name: str) -> Any:
         raise SystemExit(
             f"Missing dependency: {module_name}\n\n"
             "From the repo root, activate the virtual environment and run:\n"
-            "  python -m pip install -r requirements.txt"
+            "  python -m pip install -r week04_pid_odometry/requirements.txt"
         ) from error
 
 
@@ -61,7 +62,21 @@ plt: Any = None
 DT = 0.02
 MISSION_ORDER = ("mission_1", "mission_2", "mission_3")
 DEFAULT_INSTRUCTOR_PASSWORD = "pid-odometry-master"
-SUBMISSIONS_DIR = Path(__file__).resolve().parent / "student_submission"
+LAB_STATE_VERSION = 2
+LAB_ROOT = Path(__file__).resolve().parent
+SUBMISSIONS_DIR = Path(
+    os.environ.get("LAB4_SUBMISSIONS_DIR", str(LAB_ROOT / "student_submission"))
+).resolve()
+REQUIRED_ASSETS = (
+    "pid_concepts/index.html",
+    "pid_playground/index.html",
+    "arm_playground/index.html",
+    "odometry_playground/index.html",
+    "odometry_lessons/07_holonomic_pods.html",
+    "waypoint_draw/component.html",
+    "waypoint_draw/component.css",
+    "waypoint_draw/component.js",
+)
 
 # ---------------------------------------------------------------------------
 # Dataclasses
@@ -155,6 +170,111 @@ def clamp(value: float, low: float, high: float) -> float:
 
 def wrap_angle(theta: float) -> float:
     return ((float(theta) + math.pi) % (2 * math.pi)) - math.pi
+
+
+def finite_number(value: Any) -> bool:
+    """Return True only for a finite real number, excluding booleans."""
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(float(value))
+
+
+def validate_mission_1_result(result: Any) -> tuple[bool, str]:
+    if not isinstance(result, dict):
+        return False, "Complete the arm activity."
+    metrics = result.get("metrics", {})
+    params = result.get("params", {})
+    poses_held = metrics.get("posesHeld") if isinstance(metrics, dict) else None
+    poses_required = metrics.get("posesRequired") if isinstance(metrics, dict) else None
+    gain_names = ("kp1", "ki1", "kd1", "kp2", "ki2", "kd2")
+    gains_ok = isinstance(params, dict) and all(finite_number(params.get(name)) for name in gain_names)
+    passed = (
+        result.get("activityComplete") is True
+        and finite_number(poses_held)
+        and finite_number(poses_required)
+        and int(poses_required) >= 3
+        and int(poses_held) >= int(poses_required)
+        and gains_ok
+    )
+    return (True, "Three target poses were held with recorded controller gains.") if passed else (
+        False,
+        "Hold all three target poses and keep valid gains for both joints.",
+    )
+
+
+def validate_mission_2_result(result: Any) -> tuple[bool, str]:
+    if not isinstance(result, dict):
+        return False, "Run the odometry test sequence."
+    max_error = result.get("maxError")
+    final_error = result.get("finalError")
+    params = result.get("params", {})
+    scales = list(params.values()) if isinstance(params, dict) else []
+    passed = (
+        finite_number(max_error)
+        and finite_number(final_error)
+        and 0 <= float(max_error) < 3.0
+        and 0 <= float(final_error) <= float(max_error) + 1e-9
+        and len(scales) >= 2
+        and all(finite_number(value) and float(value) > 0 for value in scales)
+    )
+    return (True, "The independently checked maximum error is below 3.0 inches.") if passed else (
+        False,
+        "Run the full test and tune both pod scales until maximum error is below 3.0 inches.",
+    )
+
+
+def validate_mission_3_result(result: Any) -> tuple[bool, str]:
+    if not isinstance(result, dict) or result.get("drove") is not True:
+        return False, "Plan and drive a complete route."
+    metrics = result.get("metrics", {})
+    if not isinstance(metrics, dict):
+        return False, "The drive did not return measurable results."
+    required = (
+        "mission_waypoints_reached",
+        "mission_waypoint_total",
+        "min_pedestrian_gap",
+        "safe_radius",
+        "mean_tracking_error",
+        "mean_tracking_limit",
+        "max_tracking_error",
+        "max_tracking_limit",
+    )
+    if not all(finite_number(metrics.get(name)) for name in required):
+        return False, "The drive result is missing required measurements."
+    passed = (
+        int(metrics["mission_waypoint_total"]) == 4
+        and int(metrics["mission_waypoints_reached"]) == 4
+        and float(metrics["min_pedestrian_gap"]) >= max(0.28, float(metrics["safe_radius"]))
+        and float(metrics["mean_tracking_error"]) <= min(0.05, float(metrics["mean_tracking_limit"]))
+        and float(metrics["max_tracking_error"]) <= min(0.10, float(metrics["max_tracking_limit"]))
+        and isinstance(result.get("route"), list)
+        and len(result.get("route", [])) >= 4
+        and isinstance(result.get("trace"), list)
+        and len(result.get("trace", [])) >= 2
+    )
+    return (True, "All four waypoints, clearance, and tracking limits were independently checked.") if passed else (
+        False,
+        "Revise the route, calibration, speed, or gains until every measured requirement passes.",
+    )
+
+
+MISSION_VALIDATORS = {
+    "mission_1": validate_mission_1_result,
+    "mission_2": validate_mission_2_result,
+    "mission_3": validate_mission_3_result,
+}
+
+
+def result_signature(result: Any) -> str:
+    compact = (
+        {
+            key: value
+            for key, value in result.items()
+            if key not in ("recording_frames", "recording_frame_duration_ms")
+        }
+        if isinstance(result, dict)
+        else result
+    )
+    serialized = json.dumps(compact, sort_keys=True, default=str)
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
 
 # ---------------------------------------------------------------------------
@@ -514,8 +634,8 @@ def mission_context() -> dict[str, Any]:
     if current == "mission_2":
         return {
             "id": "mission_2",
-            "title": "Mission 2 -- Odometry Calibration",
-            "task": "Calibrate wheel radius and track width so position error < 0.15 m and heading error < 8 degrees.",
+            "title": "Mission 2 -- Holonomic Odometry Calibration",
+            "task": "Calibrate the forward and sideways odometry-pod scales, then keep maximum test error below 3.0 inches.",
             "unlock": "Pass the check to unlock Mission 3.",
         }
     if current == "mission_3":
@@ -538,6 +658,23 @@ def mark_mission_complete(mission_id: str) -> None:
         st.session_state["mission_progress"] = progress
 
 
+def invalidate_mission_and_following(mission_id: str) -> None:
+    """Remove stale passes when evidence for a mission changes."""
+    start = MISSION_ORDER.index(mission_id)
+    invalid = set(MISSION_ORDER[start:])
+    st.session_state["mission_progress"] = [
+        item for item in st.session_state.get("mission_progress", [])
+        if item in MISSION_ORDER and item not in invalid
+    ]
+    for index, item in enumerate(MISSION_ORDER, start=1):
+        if item in invalid:
+            st.session_state[f"m{index}_passed"] = None
+            st.session_state.pop(f"m{index}_result", None)
+            st.session_state.pop(f"m{index}_params", None)
+            st.session_state.pop(f"m{index}_metrics", None)
+            st.session_state.pop(f"m{index}_checked_signature", None)
+
+
 def render_mission_header(context: dict[str, Any]) -> None:
     st.markdown(MISSION_STYLE, unsafe_allow_html=True)
     progress = set(st.session_state.get("mission_progress", [])) & set(MISSION_ORDER)
@@ -557,14 +694,11 @@ def render_mission_header(context: dict[str, Any]) -> None:
         + " &nbsp; "
         + f"{len(progress)}/3 missions complete</div>"
     )
-
     step_label = f"Mission {MISSION_ORDER.index(current) + 1} of 3"
-    banner_class = "mission-banner"
-    step_class = "mission-step"
     unlock_html = f'<div class="mission-unlock">{context["unlock"]}</div>' if context.get("unlock") else ""
     st.markdown(
-        f'<div class="{banner_class}">'
-        f'<div class="{step_class}">{step_label}</div>'
+        '<div class="mission-banner">'
+        f'<div class="mission-step">{step_label}</div>'
         f'<div class="mission-title">{context["title"]}</div>'
         f'<div class="mission-task">{context["task"]}</div>'
         f'{unlock_html}{dots_html}</div>',
@@ -572,60 +706,35 @@ def render_mission_header(context: dict[str, Any]) -> None:
     )
 
 
+def render_completion_checklist(items: list[tuple[str, bool, str]]) -> None:
+    """Show students exactly what remains before a mission can be checked."""
+    st.markdown("**Mission progress**")
+    for label, complete, next_step in items:
+        if complete:
+            st.success(f"Completed: {label}")
+        else:
+            st.info(f"Next: {next_step}")
+
+
 def render_mission_explanations(mission_id: str) -> dict[str, str]:
-    st.markdown("**Explain your design choices** (saved for grading):")
-    if mission_id == "mission_1":
-        gain_text = st.text_area(
-            "How did you tune the shoulder and elbow gains?",
-            key=f"{mission_id}_explain_gains",
-            height=90,
-        )
-        tradeoff_text = st.text_area(
-            "What did gravity compensation change about the arm behavior?",
-            key=f"{mission_id}_explain_tradeoff",
-            height=90,
-        )
-        return {"joint_gains": gain_text, "gravity_comp": tradeoff_text}
-    if mission_id == "mission_2":
-        calibration_text = st.text_area(
-            "How did you find the right wheel radius and track width?",
-            key=f"{mission_id}_explain_calibration",
-            height=90,
-        )
-        drift_text = st.text_area(
-            "What causes odometry drift even after calibration?",
-            key=f"{mission_id}_explain_drift",
-            height=90,
-        )
-        return {"calibration": calibration_text, "drift": drift_text}
-    if mission_id == "mission_3":
-        heading_text = st.text_area(
-            "How does the heading PID turn a goal point into a steering command?",
-            key=f"{mission_id}_explain_heading",
-            height=90,
-        )
-        integration_text = st.text_area(
-            "Why does a well-tuned controller still fail when odometry is miscalibrated?",
-            key=f"{mission_id}_explain_integration",
-            height=90,
-        )
-        return {"heading": heading_text, "integration": integration_text}
-    return {}
+    explanations = mission_explanations_from_state(mission_id)
+    st.caption("Your required prediction and analysis answers above will be saved as the mission explanation.")
+    return explanations
 
 
 def mission_explanations_from_state(mission_id: str) -> dict[str, str]:
     keys = {
         "mission_1": {
-            "joint_gains": "mission_1_explain_gains",
-            "gravity_comp": "mission_1_explain_tradeoff",
+            "prediction": checkin_key("m1_prediction", "note"),
+            "tuning_analysis": checkin_key("m1_arm_tuning", "note"),
         },
         "mission_2": {
-            "calibration": "mission_2_explain_calibration",
-            "drift": "mission_2_explain_drift",
+            "prediction": checkin_key("m2_prediction", "note"),
+            "calibration_analysis": checkin_key("m2_analysis", "note"),
         },
         "mission_3": {
-            "heading": "mission_3_explain_heading",
-            "integration": "mission_3_explain_integration",
+            "technical_analysis": checkin_key("m3_technical", "note"),
+            "human_centered_analysis": checkin_key("m3_human", "note"),
         },
     }
     return {
@@ -636,7 +745,7 @@ def mission_explanations_from_state(mission_id: str) -> dict[str, str]:
 
 def render_student_identity() -> dict[str, str]:
     with st.expander("Student info for the export", expanded=False):
-        st.caption("Optional, but useful if your instructor collects submissions from a class.")
+        st.caption("Your name and student ID or email are required for the final submission. Section is optional.")
         st.text_input("Name", key="student_name")
         st.text_input("Student ID or email", key="student_id")
         st.text_input("Section", key="student_section")
@@ -667,6 +776,7 @@ def render_instructor_controls() -> None:
         st.success("Instructor mode unlocked.")
         page_options = {
             "Home": "intro",
+            "Environment check": "environment",
             "PID concepts": "pid_concepts",
             "Background": "background",
             "PID playground": "pid_playground",
@@ -1429,7 +1539,7 @@ def build_mission_zip(
 ) -> bytes:
     """Build a ZIP for a single mission submission."""
     payload = {
-        "schema_version": 1,
+        "schema_version": LAB_STATE_VERSION,
         "created_at": datetime.now().isoformat(timespec="seconds"),
         "mission_id": mission_id,
         "student": identity,
@@ -1458,6 +1568,15 @@ def build_mission_zip(
         for k, v in explanations.items():
             md_lines.append(f"\n### {k}\n\n{v or '(no answer)'}")
         archive.writestr("explanation.md", "\n".join(md_lines))
+        manifest = {
+            "schema_version": LAB_STATE_VERSION,
+            "mission_id": mission_id,
+            "files": [
+                {"path": info.filename, "size_bytes": info.file_size, "crc32": f"{info.CRC:08x}"}
+                for info in archive.filelist
+            ],
+        }
+        archive.writestr("manifest.json", json.dumps(manifest, indent=2))
     return buffer.getvalue()
 
 
@@ -1469,7 +1588,7 @@ def build_final_submission_zip(
 ) -> bytes:
     """Build a comprehensive ZIP with all missions and check-ins."""
     payload = {
-        "schema_version": 1,
+        "schema_version": LAB_STATE_VERSION,
         "created_at": datetime.now().isoformat(timespec="seconds"),
         "student": identity,
         "missions": {},
@@ -1537,6 +1656,15 @@ def build_final_submission_zip(
             "",
         ]
         archive.writestr("final_reflection.md", "\n".join(reflection_lines))
+        manifest = {
+            "schema_version": LAB_STATE_VERSION,
+            "complete": set(payload["missions"]) == set(MISSION_ORDER),
+            "files": [
+                {"path": info.filename, "size_bytes": info.file_size, "crc32": f"{info.CRC:08x}"}
+                for info in archive.filelist
+            ],
+        }
+        archive.writestr("manifest.json", json.dumps(manifest, indent=2))
     return buffer.getvalue()
 
 
@@ -1579,14 +1707,16 @@ def save_final_submission(
 # ---------------------------------------------------------------------------
 
 AUTOSAVE_DIR = SUBMISSIONS_DIR / "autosave"
+AUTOSAVE_RESPONSES_FILE = AUTOSAVE_DIR / "responses.json"
+AUTOSAVE_PROGRESS_FILE = AUTOSAVE_DIR / "progress.json"
 
 # Every check-in key used across the lab, so the autosave captures all of them.
 ALL_CHECKIN_KEYS = (
     "background_compare", "background_social",
     "pid_playground_terms", "odom_background_wheels",
-    "m1_arm_tuning",
-    "m2_drift", "m2_turning", "m3_heading_pid", "m3_integration",
-    "ethics_failure_mode", "ethics_margin", "ethics_accountability",
+    "m1_prediction", "m1_arm_tuning",
+    "m2_prediction", "m2_analysis",
+    "m3_prediction", "m3_technical", "m3_human",
     "final_reflection",
 )
 
@@ -1615,6 +1745,102 @@ def collect_text_responses() -> dict[str, Any]:
         or str(st.session_state.get("export_student_section", "")).strip(),
     }
     return {"identity": identity, "checkins": checkins, "explanations": explanations}
+
+
+def collect_progress_state() -> dict[str, Any]:
+    return {
+        "schema_version": LAB_STATE_VERSION,
+        "stage": str(st.session_state.get("stage", "intro")),
+        "mission_progress": [
+            mission_id for mission_id in st.session_state.get("mission_progress", [])
+            if mission_id in MISSION_ORDER
+        ],
+        "missions": {
+            mission_id: {
+                "passed": st.session_state.get(f"m{index}_passed"),
+                "result": component_state_without_recording(st.session_state.get(f"m{index}_result", {})),
+                "params": st.session_state.get(f"m{index}_params", {}),
+                "metrics": st.session_state.get(f"m{index}_metrics", {}),
+                "checked_signature": st.session_state.get(f"m{index}_checked_signature"),
+            }
+            for index, mission_id in enumerate(MISSION_ORDER, start=1)
+        },
+        "m3_component_state": component_state_without_recording(
+            st.session_state.get("m3_component_state", {})
+        ),
+    }
+
+
+def _atomic_write_text(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(content, encoding="utf-8")
+    temporary.replace(path)
+
+
+def restore_autosave_if_available() -> None:
+    """Restore a compatible autosave once per Streamlit browser session."""
+    if st.session_state.get("_autosave_restore_checked"):
+        return
+    st.session_state["_autosave_restore_checked"] = True
+    if not AUTOSAVE_RESPONSES_FILE.exists() and not AUTOSAVE_PROGRESS_FILE.exists():
+        return
+    restored_items = 0
+    try:
+        if AUTOSAVE_RESPONSES_FILE.exists():
+            responses = json.loads(AUTOSAVE_RESPONSES_FILE.read_text(encoding="utf-8"))
+            if int(responses.get("schema_version", 0)) == LAB_STATE_VERSION:
+                for key, value in responses.get("checkins", {}).items():
+                    if key in ALL_CHECKIN_KEYS and str(value).strip():
+                        st.session_state.setdefault(checkin_key(key, "note"), str(value))
+                        restored_items += 1
+                identity = responses.get("identity", {})
+                if isinstance(identity, dict):
+                    for field, state_key in (
+                        ("name", "student_name"),
+                        ("student_id", "student_id"),
+                        ("section", "student_section"),
+                    ):
+                        if str(identity.get(field, "")).strip():
+                            st.session_state.setdefault(state_key, str(identity[field]))
+                            st.session_state.setdefault(f"export_{state_key}", str(identity[field]))
+        if AUTOSAVE_PROGRESS_FILE.exists():
+            progress = json.loads(AUTOSAVE_PROGRESS_FILE.read_text(encoding="utf-8"))
+            if int(progress.get("schema_version", 0)) == LAB_STATE_VERSION:
+                valid_progress: list[str] = []
+                missions = progress.get("missions", {})
+                preceding_valid = True
+                for index, mission_id in enumerate(MISSION_ORDER, start=1):
+                    saved = missions.get(mission_id, {}) if isinstance(missions, dict) else {}
+                    result = saved.get("result", {}) if isinstance(saved, dict) else {}
+                    passed, _ = MISSION_VALIDATORS[mission_id](result)
+                    if preceding_valid and passed and saved.get("passed") is True:
+                        st.session_state[f"m{index}_passed"] = True
+                        st.session_state[f"m{index}_result"] = result
+                        st.session_state[f"m{index}_params"] = saved.get("params", {})
+                        st.session_state[f"m{index}_metrics"] = saved.get("metrics", {})
+                        st.session_state[f"m{index}_checked_signature"] = result_signature(result)
+                        if mission_id in progress.get("mission_progress", []):
+                            valid_progress.append(mission_id)
+                        restored_items += 1
+                    else:
+                        preceding_valid = False
+                st.session_state["mission_progress"] = valid_progress
+                m3_state = progress.get("m3_component_state", {})
+                if isinstance(m3_state, dict) and m3_state:
+                    st.session_state["m3_component_state"] = m3_state
+                saved_stage = str(progress.get("stage", "intro"))
+                if saved_stage in {
+                    "intro", "environment", "pid_concepts", "background",
+                    "pid_playground", "odom_background", "lab", "export",
+                }:
+                    st.session_state.setdefault("stage", saved_stage)
+        if restored_items:
+            st.session_state["_recovery_notice"] = (
+                f"Recovered {restored_items} saved response or mission item(s) from this lab folder."
+            )
+    except Exception as error:
+        st.session_state["_recovery_error"] = f"Saved work could not be restored: {error}"
 
 
 def _text_responses_markdown(responses: dict[str, Any]) -> str:
@@ -1669,26 +1895,28 @@ def autosave_responses_and_gifs() -> None:
             }
             for mid, files in gifs.items()
         }
+        progress = collect_progress_state()
         signature = json.dumps(
-            {"responses": responses, "gifs": gif_fingerprints},
-            sort_keys=True, default=str,
+            {"responses": responses, "gifs": gif_fingerprints, "progress": progress},
+            sort_keys=True,
+            default=str,
         )
-        digest = str(hash(signature))
+        digest = hashlib.sha256(signature.encode("utf-8")).hexdigest()
         if st.session_state.get("_autosave_digest") == digest:
             return
 
         AUTOSAVE_DIR.mkdir(parents=True, exist_ok=True)
         payload = {
-            "schema_version": 1,
+            "schema_version": LAB_STATE_VERSION,
             "saved_at": datetime.now().isoformat(timespec="seconds"),
             **responses,
             "activity_gifs": gif_manifest,
         }
-        (AUTOSAVE_DIR / "responses.json").write_text(
-            json.dumps(payload, indent=2, default=str), encoding="utf-8"
-        )
-        (AUTOSAVE_DIR / "responses.md").write_text(
-            _text_responses_markdown(responses), encoding="utf-8"
+        _atomic_write_text(AUTOSAVE_RESPONSES_FILE, json.dumps(payload, indent=2, default=str))
+        _atomic_write_text(AUTOSAVE_DIR / "responses.md", _text_responses_markdown(responses))
+        _atomic_write_text(
+            AUTOSAVE_PROGRESS_FILE,
+            json.dumps({**progress, "saved_at": payload["saved_at"]}, indent=2, default=str),
         )
         for mission_id, files in gifs.items():
             gif_dir = AUTOSAVE_DIR / mission_id / "activity_gifs"
@@ -1698,9 +1926,10 @@ def autosave_responses_and_gifs() -> None:
 
         st.session_state["_autosave_digest"] = digest
         st.session_state["_autosave_last"] = payload["saved_at"]
-    except Exception:
-        # Autosave must never interrupt the lab; a manual save remains available.
-        pass
+        st.session_state.pop("_autosave_error", None)
+    except Exception as error:
+        # Autosave must never interrupt the lab; surface the failure in the sidebar.
+        st.session_state["_autosave_error"] = str(error)
 
 
 # ---------------------------------------------------------------------------
@@ -1829,6 +2058,68 @@ HERO_STYLE = """
 """
 
 
+def environment_check_results() -> list[dict[str, Any]]:
+    checks: list[dict[str, Any]] = []
+    for module_name in ("streamlit", "numpy", "matplotlib", "PIL"):
+        try:
+            module = __import__(module_name)
+            version = str(getattr(module, "__version__", "available"))
+            checks.append({"check": f"Python package: {module_name}", "passed": True, "detail": version})
+        except Exception as error:
+            checks.append({"check": f"Python package: {module_name}", "passed": False, "detail": str(error)})
+    for relative_path in REQUIRED_ASSETS:
+        exists = (LAB_ROOT / relative_path).is_file()
+        checks.append({
+            "check": f"Lab asset: {relative_path}",
+            "passed": exists,
+            "detail": "found" if exists else "missing",
+        })
+    try:
+        SUBMISSIONS_DIR.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(dir=SUBMISSIONS_DIR, prefix=".preflight-", delete=True):
+            pass
+        checks.append({"check": "Submission folder is writable", "passed": True, "detail": str(SUBMISSIONS_DIR)})
+    except Exception as error:
+        checks.append({"check": "Submission folder is writable", "passed": False, "detail": str(error)})
+    return checks
+
+
+def render_environment_page() -> None:
+    st.title("Environment check")
+    st.markdown(
+        "Before beginning, verify that the lab can load every interactive activity and save your work. "
+        "This check does not change your answers or mission progress."
+    )
+    results = environment_check_results()
+    all_passed = all(item["passed"] for item in results)
+    st.dataframe(
+        [
+            {
+                "Status": "Passed" if item["passed"] else "Needs attention",
+                "Check": item["check"],
+                "Details": item["detail"],
+            }
+            for item in results
+        ],
+        hide_index=True,
+        width="stretch",
+    )
+    if all_passed:
+        st.success("Environment check passed. The tutorial is ready.")
+        st.session_state["environment_preflight_passed"] = True
+    else:
+        st.error(
+            "The environment is not ready. Close the guide and use the launcher in the Lab 4 README, "
+            "then reopen the guide and run this check again."
+        )
+        st.session_state["environment_preflight_passed"] = False
+    back_col, next_col = st.columns(2)
+    if back_col.button("Back", width="stretch"):
+        set_stage("intro")
+    if next_col.button("Continue to PID concepts", type="primary", width="stretch", disabled=not all_passed):
+        set_stage("pid_concepts")
+
+
 def render_intro_page() -> None:
     pid_svg = (
         '<svg viewBox="0 0 300 220" xmlns="http://www.w3.org/2000/svg">'
@@ -1876,15 +2167,11 @@ def render_intro_page() -> None:
         unsafe_allow_html=True,
     )
 
-    left, tutorial_col, skip_col, right = st.columns([0.7, 1.2, 1.2, 0.7])
+    left, tutorial_col, right = st.columns([1.0, 1.5, 1.0])
     with tutorial_col:
         st.markdown('<span class="intro-start-button"></span>', unsafe_allow_html=True)
-        if st.button("Start tutorial", type="primary", width="stretch"):
-            set_stage("pid_concepts")
-    with skip_col:
-        st.markdown('<span class="intro-start-button"></span>', unsafe_allow_html=True)
-        if st.button("Skip to lab", width="stretch"):
-            set_stage("lab")
+        if st.button("Check environment and begin", type="primary", width="stretch"):
+            set_stage("environment")
 
 
 # ---------------------------------------------------------------------------
@@ -1921,18 +2208,18 @@ def render_background_page() -> None:
         """
     )
 
-    st.markdown("#### Step 1 — Two ways to control a system")
+    st.markdown("#### Step 1 - Two ways to control a system")
     open_col, closed_col = st.columns(2)
     with open_col:
-        st.markdown("**Open loop — command without feedback**")
+        st.markdown("**Open loop - command without feedback**")
         st.write(
             "The action is set in advance: *apply gas for 2 seconds, then release.* "
             "The controller never measures the result. If conditions differ from "
-            "what was assumed — an incline, a low battery, a heavier load — the car "
+            "what was assumed - an incline, a low battery, a heavier load - the car "
             "stops in the wrong place, and the controller cannot detect it."
         )
     with closed_col:
-        st.markdown("**Closed loop — command based on measurement**")
+        st.markdown("**Closed loop - command based on measurement**")
         st.write(
             "The controller measures the remaining gap continuously and adjusts: "
             "reducing the command as it approaches, applying more if it stalls "
@@ -1940,18 +2227,18 @@ def render_background_page() -> None:
             "conditions it wasn't told about. PID is a closed-loop controller."
         )
 
-    st.markdown("#### Step 2 — Controllers come in several types")
+    st.markdown("#### Step 2 - Controllers come in several types")
     st.write(
         "A controller is a rule from **error** to **command**. The simplest is "
-        "**bang-bang** (on/off) — full command until the target is reached, as in a "
-        "thermostat — which is easy to build but tends to overshoot. **Proportional** "
+        "**bang-bang** (on/off) - full command until the target is reached, as in a "
+        "thermostat - which is easy to build but tends to overshoot. **Proportional** "
         "control is smoother: the command is proportional to the error. **PID** adds "
         "two further terms on top of proportional so the controller can damp its "
         "approach and remove any steady offset. Those three terms are the subject of "
         "the rest of this page."
     )
 
-    st.markdown("#### Step 3 — The loop, formally")
+    st.markdown("#### Step 3 - The loop, formally")
     st.markdown(
         """
         Every feedback controller follows the same loop. The robot measures its
@@ -2003,7 +2290,7 @@ def render_background_page() -> None:
         "The gains you pick decide how a real machine behaves around real people. "
         "Too aggressive and a car overshoots the stop line into a crosswalk; too "
         "timid and antilock brakes react too slowly. Antilock brakes, insulin pumps, "
-        "elevator stops, drone landings — behind each is someone who chose the "
+        "elevator stops, drone landings - behind each is someone who chose the "
         "trade-off between speed and safety. Controller tuning is a "
         "<b>sociotechnical</b> decision, not just a math exercise.",
     )
@@ -2090,8 +2377,7 @@ def _load_lesson_html(filename: str) -> str:
 
 
 def _embed_lesson(filename: str, *, height: int) -> None:
-    components = require("streamlit.components.v1")
-    components.html(_load_lesson_html(filename), height=height, scrolling=False)
+    st.iframe(LAB_ROOT / "odometry_lessons" / filename, height=height, width="stretch")
 
 
 def render_odom_background_page() -> None:
@@ -2118,7 +2404,7 @@ def render_odom_background_page() -> None:
     )
 
     # ------------------------------------------------------------------
-    # Section 1 — Dead wheel
+    # Section 1 - Dead wheel
     # ------------------------------------------------------------------
     st.markdown("## 1 · Tracking wheel: measuring real motion")
     st.markdown(
@@ -2136,13 +2422,13 @@ def render_odom_background_page() -> None:
 
     st.info(
         "**So we have a wheel that faithfully rolls along the ground.** But the robot "
-        "can't see the wheel roll — it only gets electrical pulses from a sensor. "
+        "can't see the wheel roll - it only gets electrical pulses from a sensor. "
         "Next: how that sensor turns rotation into numbers the code can read.",
         icon="➡️",
     )
 
     # ------------------------------------------------------------------
-    # Section 2 — Encoder
+    # Section 2 - Encoder
     # ------------------------------------------------------------------
     st.markdown("## 2 · Encoder ticks and direction")
     st.markdown(
@@ -2161,13 +2447,13 @@ def render_odom_background_page() -> None:
 
     st.info(
         "**Now we can count how far the wheel turned, in ticks.** But ticks aren't "
-        "meters — a big wheel covers more ground per tick than a small one. Next: "
+        "meters - a big wheel covers more ground per tick than a small one. Next: "
         "converting rotation into actual distance rolled across the floor.",
         icon="➡️",
     )
 
     # ------------------------------------------------------------------
-    # Section 3 — Wheel unroll
+    # Section 3 - Wheel unroll
     # ------------------------------------------------------------------
     st.markdown("## 3 · From wheel rotation to distance rolled")
     st.markdown(
@@ -2187,7 +2473,7 @@ def render_odom_background_page() -> None:
     _embed_lesson("05_wheel_unroll.html", height=620)
 
     st.info(
-        "**One wheel gives us distance along a straight line — but robots turn.** "
+        "**One wheel gives us distance along a straight line - but robots turn.** "
         "A single wheel can't tell which way the robot is facing. The trick: use "
         "*two* wheels a known distance apart. When they roll different amounts, the "
         "robot must have rotated. Next: turning that difference into a heading.",
@@ -2195,7 +2481,7 @@ def render_odom_background_page() -> None:
     )
 
     # ------------------------------------------------------------------
-    # Section 4 — Heading geometry
+    # Section 4 - Heading geometry
     # ------------------------------------------------------------------
     st.markdown("## 4 · Two wheels give position *and* heading")
 
@@ -2208,7 +2494,7 @@ def render_odom_background_page() -> None:
 
         Picture the robot pivoting. The outer wheel traces a bigger circle than the
         inner wheel, so it rolls farther. The *difference* between the two wheel
-        distances is exactly the extra arc the outer wheel swept — and that extra
+        distances is exactly the extra arc the outer wheel swept - and that extra
         arc, divided by the track width, is the turn angle.
         """
     )
@@ -2250,6 +2536,12 @@ def render_odom_background_page() -> None:
         "the wrong map. Tracking wheels, encoders, and the geometry above are the basic "
         "tools for keeping that estimate aligned with reality.",
     )
+    st.info(
+        "Mission 2 changes the hardware, not the core reasoning. Instead of left and right "
+        "drive wheels, its holonomic robot uses one forward pod and one sideways pod. You will "
+        "still convert sensor motion into distance, compare estimate with reality, and calibrate "
+        "the conversion when the two disagree."
+    )
 
     checkin = render_checkin(
         key="odom_background_wheels",
@@ -2281,6 +2573,12 @@ def render_odom_background_page() -> None:
 def render_lab_page() -> None:
     context = mission_context()
     render_mission_header(context)
+    with st.expander("Review a tutorial section", expanded=False):
+        left, right = st.columns(2)
+        if left.button("Review PID playground", key="review_pid", width="stretch"):
+            set_stage("pid_playground")
+        if right.button("Review odometry tutorial", key="review_odom", width="stretch"):
+            set_stage("odom_background")
 
     current = active_mission()
     if current == "mission_1":
@@ -2499,11 +2797,13 @@ def render_mission_1(context: dict[str, Any]) -> None:
     st.header("Mission 1: Two-link robot arm")
     st.markdown(
         """
-        Use the arm playground as the whole first mission. Tune the shoulder and
-        elbow PID controllers for the two-link arm, then test whether the arm can
-        settle on the target poses without shaking or overshooting badly.
+        The tutorial used one position and one controller so you could see each PID
+        term clearly. A robot arm extends the same idea to **two interacting joints**:
+        the shoulder and elbow each have a target, measured angle, error, and PID
+        command. Moving one link also changes the load on the other, and gravity
+        continuously pulls the arm down.
 
-        Each target now plays in two beats — the arm **moves** to the pose, then
+        Each target now plays in two beats - the arm **moves** to the pose, then
         **holds** so you can clearly see how cleanly it settled.
 
         Start with the automatic target poses. Once the arm nails three poses in
@@ -2511,6 +2811,25 @@ def render_mission_1(context: dict[str, Any]) -> None:
         compensation when the shoulder struggles to carry the second link.
         """
     )
+
+    prediction = render_checkin(
+        key="m1_prediction",
+        title="Predict before tuning",
+        label="Prediction",
+        prompt=(
+            "Before opening the arm controls, predict what too little Kp and too little Kd "
+            "would each look like while the arm moves and holds a target."
+        ),
+        placeholder="With too little Kp, I expect... With too little Kd, I expect...",
+    )
+    if not prediction["complete"]:
+        st.info("Save a prediction above to open the arm playground.")
+        render_completion_checklist([
+            ("Prediction saved before tuning", False, "write the prediction"),
+            ("Three target poses held", False, "complete the prediction, then tune the arm"),
+            ("Evidence-based tuning analysis", False, "complete the activity, then compare the result"),
+        ])
+        return
 
     arm_result = arm_playground_component(key="m1_arm_playground") or {}
     if not isinstance(arm_result, dict):
@@ -2523,7 +2842,7 @@ def render_mission_1(context: dict[str, Any]) -> None:
             "Latest arm activity GIF automatically saved to "
             "`student_submission/mission_1/activity_gifs/latest_arm_tuning.gif`."
         )
-    arm_activity_ready = bool(arm_result.get("activityComplete"))
+    arm_activity_ready, arm_validation_message = validate_mission_1_result(arm_result)
     if arm_activity_ready:
         persist_latest_mission_run(
             "mission_1", component_state_without_recording(arm_result)
@@ -2533,11 +2852,23 @@ def render_mission_1(context: dict[str, Any]) -> None:
         key="m1_arm_tuning",
         title="Arm tuning notes",
         prompt=(
-            "What did you change on the shoulder and elbow controllers to make "
-            "the arm settle cleanly? Mention at least one PID term and what it fixed."
+            "Compare the result with your prediction. What did you change on the shoulder "
+            "and elbow controllers, what evidence showed improvement, and what did gravity "
+            "compensation change?"
         ),
-        placeholder="I increased/decreased... because the arm was...",
+        placeholder="I predicted... I changed... The hold phase showed... Gravity compensation...",
     )
+
+    current_signature = result_signature(arm_result)
+    checked_signature = st.session_state.get("m1_checked_signature")
+    if checked_signature and checked_signature != current_signature:
+        invalidate_mission_and_following("mission_1")
+
+    render_completion_checklist([
+        ("Prediction saved before tuning", prediction["complete"], "write the prediction"),
+        ("Three target poses held", arm_activity_ready, arm_validation_message),
+        ("Evidence-based tuning analysis", arm_checkin["complete"], "compare the prediction with the observed arm motion"),
+    ])
 
     st.subheader("Mission check")
     st.write(
@@ -2549,14 +2880,11 @@ def render_mission_1(context: dict[str, Any]) -> None:
         "Check Mission 1",
         key="check_m1",
         type="primary",
-        disabled=not arm_checkin["complete"] or not arm_activity_ready,
+        disabled=not prediction["complete"] or not arm_checkin["complete"] or not arm_activity_ready,
     ):
+        st.session_state["m1_checked_signature"] = current_signature
         st.session_state["m1_passed"] = True
-        st.session_state["m1_result"] = {
-            "component": "two_link_arm",
-            "activity": component_state_without_recording(arm_result),
-            "checkin": arm_checkin,
-        }
+        st.session_state["m1_result"] = component_state_without_recording(arm_result)
         st.session_state["m1_params"] = {
             "activity": "two_link_arm_pid_tuning",
             **arm_result.get("params", {}),
@@ -2569,7 +2897,7 @@ def render_mission_1(context: dict[str, Any]) -> None:
     if not arm_checkin["complete"]:
         st.caption("Answer the arm tuning check-in before running the mission check.")
     elif not arm_activity_ready:
-        st.caption("Hold three target poses so the arm run can be recorded before checking the mission.")
+        st.caption(arm_validation_message)
 
     if st.session_state.get("m1_passed") is True:
         st.success("Mission 1 passed. Export your arm tuning notes, then unlock Mission 2.")
@@ -2689,6 +3017,13 @@ def render_mission_2(context: dict[str, Any]) -> None:
     st.subheader("Mission 2: Holonomic odometry tuning")
     st.markdown(
         """
+        The tutorial used left and right wheels to explain how a differential-drive
+        robot estimates forward motion and turning. This activity uses a **holonomic**
+        robot, which can also slide sideways. It therefore needs one tracking pod for
+        forward motion and a second, perpendicular pod for sideways motion. The shared
+        idea is unchanged: encoder ticks must be converted into physical distance using
+        a calibrated scale.
+
         This mission is one odometry tuning activity. The robot is holonomic, so
         it can drive forward/back and strafe left/right. Two odometry pods measure
         those two axes: one forward pod for `x`, and one sideways pod for `y`.
@@ -2698,6 +3033,24 @@ def render_mission_2(context: dict[str, Any]) -> None:
         sequence. Pass when the estimated final pose stays under the allowed error.
         """
     )
+    prediction = render_checkin(
+        key="m2_prediction",
+        title="Predict a calibration error",
+        label="Prediction",
+        prompt=(
+            "Before running the activity, predict what the estimate will do if the forward "
+            "pod scale is too large and the strafe pod scale is too small."
+        ),
+        placeholder="The estimated forward distance will... while sideways distance will...",
+    )
+    if not prediction["complete"]:
+        st.info("Save a prediction above to open the calibration activity.")
+        render_completion_checklist([
+            ("Calibration prediction saved", False, "write the prediction"),
+            ("Full odometry test under 3.0 inches", False, "complete the prediction, then run the test"),
+            ("Prediction compared with measurements", False, "analyze the completed test"),
+        ])
+        return
     _embed_lesson("07_holonomic_pods.html", height=600)
 
     result = odometry_playground_component(key="m2_odometry_ftc") or {}
@@ -2714,7 +3067,7 @@ def render_mission_2(context: dict[str, Any]) -> None:
         persist_latest_mission_run(
             "mission_2", component_state_without_recording(result)
         )
-    passed = bool(result.get("passed")) if isinstance(result, dict) else False
+    passed, validation_message = validate_mission_2_result(result)
     max_error = float(result.get("maxError", 999.0)) if isinstance(result, dict) else 999.0
     final_error = float(result.get("finalError", 999.0)) if isinstance(result, dict) else 999.0
     params = result.get("params", {}) if isinstance(result, dict) else {}
@@ -2724,25 +3077,33 @@ def render_mission_2(context: dict[str, Any]) -> None:
     cols[1].metric("Final error", f"{final_error:.2f} in" if final_error < 999 else "--")
     cols[2].metric("Requirement", "< 3.0 in")
 
-    c1 = render_checkin(
-        key="m2_drift",
-        title="Pod scale tuning",
-        prompt="What did the forward and strafe pod scale values change in the estimate?",
-        placeholder="The forward scale changed... The strafe scale changed...",
-    )
-    c2 = render_checkin(
-        key="m2_turning",
-        title="Holonomic odometry",
-        prompt="Why does a holonomic robot need a sideways odometry pod for strafing?",
-        placeholder="A sideways pod is needed because...",
+    analysis = render_checkin(
+        key="m2_analysis",
+        title="Compare prediction with measured behavior",
+        prompt=(
+            "Compare your prediction with the test. Explain what each pod scale changed, "
+            "why the sideways pod is necessary, and why some drift can remain after calibration."
+        ),
+        placeholder="I predicted... The forward scale changed... The sideways pod is needed because... Remaining drift...",
     )
 
-    checks_ready = c1["complete"] and c2["complete"]
+    checks_ready = prediction["complete"] and analysis["complete"]
+    current_signature = result_signature(result)
+    checked_signature = st.session_state.get("m2_checked_signature")
+    if checked_signature and checked_signature != current_signature:
+        invalidate_mission_and_following("mission_2")
+
+    render_completion_checklist([
+        ("Calibration prediction saved", prediction["complete"], "write the prediction"),
+        ("Full odometry test under 3.0 inches", passed, validation_message),
+        ("Prediction compared with measurements", analysis["complete"], "analyze the test and the role of both pods"),
+    ])
 
     st.subheader("Mission check")
     st.write("**Goal**: run the odometry test sequence with max error under 3.0 inches.")
 
     if st.button("Check Mission 2", key="check_m2", type="primary", disabled=not checks_ready):
+        st.session_state["m2_checked_signature"] = current_signature
         if passed:
             st.session_state["m2_passed"] = True
             st.session_state["m2_result"] = component_state_without_recording(result)
@@ -2756,7 +3117,7 @@ def render_mission_2(context: dict[str, Any]) -> None:
             st.session_state["m2_passed"] = False
 
     if not checks_ready:
-        st.caption("Answer both check-ins above before running the mission check.")
+        st.caption("Complete the prediction and analysis before running the mission check.")
 
     if st.session_state.get("m2_passed") is True:
         st.success(f"Mission 2 passed. Max test error: {max_error:.2f} in.")
@@ -2787,7 +3148,7 @@ def render_mission_2(context: dict[str, Any]) -> None:
             request_streamlit_rerun()
 
     elif st.session_state.get("m2_passed") is False:
-        st.error("Not yet. Run the test sequence in the activity and tune until max error is under 3.0 inches.")
+        st.error(validation_message)
 
 
 
@@ -3097,6 +3458,74 @@ def csv_for_drawn_waypoint_trace(state: dict[str, Any]) -> str:
     return buffer.getvalue()
 
 
+ACCESSIBLE_ROUTE_EXAMPLE = """0.40, 0.10
+0.80, 0.20
+1.15, 0.35
+1.30, 0.70
+1.15, 1.05
+1.55, 1.05
+1.95, 1.05
+2.20, 1.45
+2.05, 1.80
+1.55, 2.05"""
+
+
+def parse_route_coordinates(text: str) -> list[list[float]]:
+    route: list[list[float]] = []
+    for line_number, raw_line in enumerate(text.splitlines(), start=1):
+        line = raw_line.strip()
+        if not line:
+            continue
+        parts = [part.strip() for part in line.split(",")]
+        if len(parts) != 2:
+            raise ValueError(f"Line {line_number} must contain x, y.")
+        x, y = (float(part) for part in parts)
+        if not all(math.isfinite(value) for value in (x, y)):
+            raise ValueError(f"Line {line_number} contains a non-finite coordinate.")
+        if not (-0.2 <= x <= 3.4 and -0.2 <= y <= 2.5):
+            raise ValueError(f"Line {line_number} is outside the displayed sidewalk.")
+        route.append([round(x, 4), round(y, 4)])
+    if len(route) < 4:
+        raise ValueError("Enter at least four route points.")
+    return route
+
+
+def render_accessible_route_entry() -> None:
+    with st.expander("Keyboard alternative: enter route coordinates", expanded=False):
+        st.markdown(
+            "If drawing with a pointer is difficult, enter one `x, y` coordinate per line. "
+            "The coordinates use meters from START. Include points near WP1, WP2, WP3, and WP4 in order."
+        )
+        route_text = st.text_area(
+            "Route coordinates",
+            value=ACCESSIBLE_ROUTE_EXAMPLE,
+            height=220,
+            key="m3_accessible_route_text",
+        )
+        if st.button("Load coordinate route", key="m3_load_accessible_route"):
+            try:
+                route = parse_route_coordinates(route_text)
+                previous = st.session_state.get("m3_component_state", {})
+                params = previous.get("params", {}) if isinstance(previous, dict) else {}
+                state = {
+                    "version": 7,
+                    "route": route,
+                    "stroke_breaks": [len(route)],
+                    "params": params,
+                    "drove": False,
+                    "passed": False,
+                    "metrics": {},
+                    "trace": [],
+                }
+                st.session_state["m3_component_state"] = state
+                st.session_state.pop("waypoint_draw", None)
+                invalidate_mission_and_following("mission_3")
+                st.success("Coordinate route loaded into the planner.")
+                request_streamlit_rerun()
+            except ValueError as error:
+                st.error(str(error))
+
+
 def render_mission_3(context: dict[str, Any]) -> None:
     st.subheader("Mission 3: Draw, tune, and drive a safe sidewalk route")
     st.markdown(
@@ -3108,6 +3537,25 @@ def render_mission_3(context: dict[str, Any]) -> None:
         **true path** follows your curve precisely enough to complete the trip safely.
         """
     )
+
+    prediction = render_checkin(
+        key="m3_prediction",
+        title="Predict the safety trade-off",
+        label="Prediction",
+        prompt=(
+            "Before planning the route, predict how increasing forward speed or using too little "
+            "derivative control could affect tracking error and pedestrian clearance."
+        ),
+        placeholder="Increasing speed may... Too little derivative control may... Therefore clearance...",
+    )
+    if not prediction["complete"]:
+        st.info("Save a prediction above to open the route planner.")
+        render_completion_checklist([
+            ("Safety prediction saved", False, "write the prediction"),
+            ("Route driven within all measured limits", False, "complete the prediction, then plan and drive"),
+            ("Technical and human-centered analysis", False, "analyze the completed drive"),
+        ])
+        return
 
     with st.expander("How planning, PID, and odometry work together", expanded=False):
         st.markdown(
@@ -3128,6 +3576,8 @@ def render_mission_3(context: dict[str, Any]) -> None:
             at most **0.10 m**.
             """
         )
+
+    render_accessible_route_entry()
 
     initial_component_state = st.session_state.get("m3_component_state", {})
     if not isinstance(initial_component_state, dict):
@@ -3154,13 +3604,13 @@ def render_mission_3(context: dict[str, Any]) -> None:
         for key, value in latest_component_state.items()
         if key not in ("recording_frames", "recording_frame_duration_ms")
     }
-    state_signature = json.dumps(signature_state, sort_keys=True, default=str)
+    state_signature = result_signature(signature_state)
     checked_signature = st.session_state.get("m3_checked_signature")
     if checked_signature and checked_signature != state_signature:
-        st.session_state["m3_passed"] = None
+        invalidate_mission_and_following("mission_3")
 
     drove = bool(latest_component_state.get("drove"))
-    run_passed = bool(latest_component_state.get("passed"))
+    run_passed, validation_message = validate_mission_3_result(latest_component_state)
     current_metrics = latest_component_state.get("metrics", {})
     if not isinstance(current_metrics, dict):
         current_metrics = {}
@@ -3172,43 +3622,38 @@ def render_mission_3(context: dict[str, Any]) -> None:
         "between a robot and someone using the sidewalk.",
     )
 
-    c1 = render_checkin(
-        key="m3_heading_pid",
-        title="How the heading PID steers",
-        prompt="Walk through one tracking step: how does the robot turn the next route point into a steering command?",
-        placeholder="The robot uses its estimated pose to compute a desired heading, then the PID...",
+    technical = render_checkin(
+        key="m3_technical",
+        title="Technical evidence",
+        prompt=(
+            "Compare the drive with your prediction. Explain how the next route point becomes a heading command, "
+            "how PID changes steering, and why inaccurate wheel radius can make a well-tuned controller follow the wrong physical path."
+        ),
+        placeholder="I predicted... The robot computes... The PID... The green and orange paths showed...",
     )
-    c2 = render_checkin(
-        key="m3_integration",
-        title="State-estimation precision",
-        prompt="Explain why a well-tuned PID can still follow the wrong physical path when the wheel-radius estimate is inaccurate.",
-        placeholder="The PID only sees the odometry estimate, so if the estimate is wrong...",
-    )
-    c3 = render_checkin(
-        key="ethics_failure_mode",
-        title="The specific failure",
-        prompt="Controllers fail in specific ways. Describe the most dangerous failure this delivery robot can have on a busy sidewalk, and tie it to what you saw here.",
-        placeholder="The most dangerous failure is... which is what happened when...",
-    )
-    c4 = render_checkin(
-        key="ethics_margin",
-        title="The trade-off you would set",
-        prompt="Tuning for speed increases overshoot and drift; tuning for safety costs time. What safety margin would you require around a pedestrian, and what performance would you give up for it?",
-        placeholder="I would require a margin of... accepting the robot is slower because...",
-    )
-    c5 = render_checkin(
-        key="ethics_accountability",
-        title="Accountability",
-        prompt="When this robot injures someone because of a tuning or calibration choice, who is responsible — the engineer, the company, the operator? Justify your answer.",
-        placeholder="Responsibility lies primarily with... because...",
+    human = render_checkin(
+        key="m3_human",
+        title="Human-centered decision",
+        prompt=(
+            "Identify the most consequential failure for a pedestrian, choose a clearance and speed trade-off, "
+            "and explain who is responsible for verifying that decision before deployment."
+        ),
+        placeholder="The consequential failure is... I would require... Responsibility belongs to... because...",
     )
 
-    checks_ready = all(c["complete"] for c in (c1, c2, c3, c4, c5))
+    checks_ready = prediction["complete"] and technical["complete"] and human["complete"]
+
+    render_completion_checklist([
+        ("Safety prediction saved", prediction["complete"], "write the prediction"),
+        ("Route driven within all measured limits", run_passed, validation_message),
+        ("Technical analysis completed", technical["complete"], "compare the prediction with the measured drive"),
+        ("Human-centered decision justified", human["complete"], "state a clearance trade-off and responsibility"),
+    ])
 
     st.divider()
     st.subheader("Mission check")
     st.write(
-        "**Goal:** follow the route you drew, reach WP1–WP4 in order, stay at least "
+        "**Goal:** follow the route you drew, reach WP1-WP4 in order, stay at least "
         "0.28 m from pedestrians, and meet both tracking-error limits."
     )
 
@@ -3226,7 +3671,7 @@ def render_mission_3(context: dict[str, Any]) -> None:
             st.session_state["m3_metrics"] = current_metrics
 
     if not checks_ready:
-        st.caption("Answer all five reflections above before running the mission check.")
+        st.caption("Complete the prediction and both analysis responses before running the mission check.")
     elif not drove:
         st.caption("Draw a complete route and drive it before running the mission check.")
 
@@ -3267,11 +3712,7 @@ def render_mission_3(context: dict[str, Any]) -> None:
             set_stage("export")
 
     elif st.session_state.get("m3_passed") is False:
-        st.error(
-            "Not yet. Use the component verdict and metrics to isolate the problem: "
-            "revise the route for clearance, calibrate odometry if orange and green "
-            "separate, or retune PID and speed if tracking error is too high."
-        )
+        st.error(validation_message)
 
 
 
@@ -3320,14 +3761,7 @@ def render_export_page() -> None:
         st.error(f"Shorten the reflection by {reflection_words - 300} words.")
 
     # Gather all check-in answers
-    checkin_keys = [
-        "background_compare", "background_social",
-        "pid_playground_terms", "odom_background_wheels",
-        "m1_arm_tuning",
-        "m2_drift", "m2_turning", "m3_heading_pid", "m3_integration",
-        "ethics_failure_mode", "ethics_margin", "ethics_accountability",
-        "final_reflection",
-    ]
+    checkin_keys = list(ALL_CHECKIN_KEYS)
     all_checkins = {}
     for k in checkin_keys:
         resp = checkin_response(k)
@@ -3384,7 +3818,41 @@ def render_export_page() -> None:
         "section": section.strip(),
     }
 
-    all_answers_ready = 1 <= reflection_words <= 300
+    mission_validation = {
+        "mission_1": validate_mission_1_result(st.session_state.get("m1_result", {})),
+        "mission_2": validate_mission_2_result(st.session_state.get("m2_result", {})),
+        "mission_3": validate_mission_3_result(st.session_state.get("m3_result", {})),
+    }
+    required_checkins = [key for key in ALL_CHECKIN_KEYS if key != "final_reflection"]
+    checkins_complete = all(str(all_checkins.get(key, "")).strip() for key in required_checkins)
+    explanations_complete = all(
+        answers and all(str(value).strip() for value in answers.values())
+        for answers in all_explanations.values()
+    )
+    reflection_ready = 1 <= reflection_words <= 300
+    identity_ready = bool(identity["name"] and identity["student_id"])
+    missions_complete = completed == len(MISSION_ORDER) and all(
+        passed for passed, _ in mission_validation.values()
+    )
+    evidence_complete = set(all_mission_data) == set(MISSION_ORDER)
+    requirements = [
+        ("All three missions passed current server-side checks", missions_complete),
+        ("Mission evidence is present for all three missions", evidence_complete),
+        ("All required tutorial and mission responses are complete", checkins_complete),
+        ("Mission explanations are complete", explanations_complete),
+        ("Reflection contains 1 to 300 words", reflection_ready),
+        ("Name and student ID or email are provided", identity_ready),
+    ]
+    st.subheader("Submission readiness")
+    st.dataframe(
+        [
+            {"Requirement": label, "Status": "Ready" if ready else "Not ready"}
+            for label, ready in requirements
+        ],
+        hide_index=True,
+        width="stretch",
+    )
+    all_answers_ready = all(ready for _, ready in requirements)
 
     if st.button(
         "Save complete submission folder",
@@ -3399,7 +3867,7 @@ def render_export_page() -> None:
         )
         st.success(f"Saved to {path}. Commit this folder and submit the GitHub commit link.")
     if not all_answers_ready:
-        st.caption("Answer the final reflection before saving.")
+        st.caption("Complete every item in the readiness table before saving.")
 
     if st.button("Back to lab", key="export_back_bottom"):
         set_stage("lab")
@@ -3410,7 +3878,7 @@ def render_export_page() -> None:
 # ---------------------------------------------------------------------------
 
 def run_smoke_test() -> None:
-    """Run simulations without Streamlit to verify correctness."""
+    """Run simulations with quantitative assertions, not just no-crash checks."""
     global np, plt
     np = require("numpy")
     plt = require("matplotlib.pyplot")
@@ -3421,24 +3889,52 @@ def run_smoke_test() -> None:
     print(f"  Final error: {p_metrics['final_error']:.4f} m")
     print(f"  Overshoot:   {p_metrics['overshoot']:.4f} m")
     print(f"  Settling:    {p_metrics['settling_time']:.2f} s")
+    assert p_metrics["final_error"] < 0.15, "PID final error exceeded the smoke-test limit"
+    assert all(finite_number(value) for value in pid_result.position), "PID produced non-finite motion"
 
     print("Running open-loop smoke test...")
     trials = simulate_open_loop_trials(0.62, 2.0)
     mean_error = float(np.mean([abs(t.error) for t in trials]))
     print(f"  Mean absolute error: {mean_error:.3f} m")
+    assert 0.1 < mean_error < 1.0, "Open-loop comparison no longer exposes a meaningful error"
 
     print("Running odometry smoke test...")
     odom_result = simulate_odometry(0.050, 0.34)
     o_metrics = odom_metrics(odom_result)
     print(f"  Position error: {o_metrics['final_position_error']:.4f} m")
     print(f"  Heading error:  {o_metrics['final_heading_error_deg']:.1f} deg")
+    assert 0 < o_metrics["final_position_error"] < 0.5, "Odometry smoke result is outside the expected range"
+    assert 0 < o_metrics["final_heading_error_deg"] < 30, "Odometry heading result is outside the expected range"
 
     print("Running path following smoke test...")
     path_result = simulate_path_following(2.5, 0.1, 0.5)
     print(f"  Mean tracking error: {path_result.mean_tracking_error:.4f} m")
     print(f"  Max tracking error:  {path_result.max_tracking_error:.4f} m")
+    assert path_result.mean_tracking_error < 0.05, "Path follower mean error regressed"
+    assert path_result.max_tracking_error < 0.16, "Path follower peak error regressed"
+
+    assert validate_mission_2_result({
+        "maxError": 2.9,
+        "finalError": 1.0,
+        "params": {"forwardScale": 0.05, "strafeScale": 0.05},
+    })[0]
+    assert not validate_mission_2_result({
+        "maxError": 3.0,
+        "finalError": 1.0,
+        "params": {"forwardScale": 0.05, "strafeScale": 0.05},
+    })[0]
 
     print("\nSmoke test passed.")
+
+
+def run_preflight() -> None:
+    results = environment_check_results()
+    for item in results:
+        status = "PASS" if item["passed"] else "FAIL"
+        print(f"[{status}] {item['check']}: {item['detail']}")
+    if not all(item["passed"] for item in results):
+        raise SystemExit(1)
+    print("\nLab 4 preflight passed.")
 
 
 # ---------------------------------------------------------------------------
@@ -3450,6 +3946,8 @@ def run_streamlit_app() -> None:
     st = require("streamlit")
     np = require("numpy")
     plt = require("matplotlib.pyplot")
+
+    restore_autosave_if_available()
 
     stage = str(st.session_state.get("stage", "intro"))
     lab_stage = stage == "lab"
@@ -3465,9 +3963,15 @@ def run_streamlit_app() -> None:
 
     st.sidebar.caption("Local-only lab. Do not use Streamlit Cloud as submission storage.")
     render_instructor_controls()
+    if st.session_state.get("_recovery_notice"):
+        st.sidebar.success(st.session_state["_recovery_notice"])
+    if st.session_state.get("_recovery_error"):
+        st.sidebar.warning(st.session_state["_recovery_error"])
 
     if stage == "intro":
         render_intro_page()
+    elif stage == "environment":
+        render_environment_page()
     elif stage == "pid_concepts":
         render_pid_concepts_page()
     elif stage == "background":
@@ -3489,6 +3993,8 @@ def run_streamlit_app() -> None:
     last_saved = st.session_state.get("_autosave_last")
     if last_saved:
         st.sidebar.caption(f"Responses & GIFs auto-saved to submissions folder ({last_saved}).")
+    if st.session_state.get("_autosave_error"):
+        st.sidebar.error(f"Autosave needs attention: {st.session_state['_autosave_error']}")
 
 
 def main() -> None:
@@ -3498,9 +4004,18 @@ def main() -> None:
         action="store_true",
         help="Run simulations without Streamlit to verify correctness.",
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        "--preflight",
+        action="store_true",
+        help="Check packages, assets, and submission-folder access.",
+    )
+    # Streamlit and its AppTest runner can add their own command-line arguments.
+    # Ignore those while still honoring this app's explicit maintenance flags.
+    args, _unknown = parser.parse_known_args()
 
-    if args.smoke_test:
+    if args.preflight:
+        run_preflight()
+    elif args.smoke_test:
         run_smoke_test()
     else:
         run_streamlit_app()

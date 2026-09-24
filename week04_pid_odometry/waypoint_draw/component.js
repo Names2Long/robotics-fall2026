@@ -224,7 +224,7 @@ export default function mountWaypointMission(component) {
       status.textContent = "The planned route enters a pedestrian safety zone.";
     } else {
       status.className = "plan-status ok";
-      status.textContent = "Route ready: WP1–WP4 in order with safe clearance.";
+      status.textContent = "Route ready: WP1-WP4 in order with safe clearance.";
     }
     find("#drive-route").disabled = driving || drawingStroke || !plan.complete;
   }
