@@ -1,0 +1,36 @@
+{
+  "schema_version": 2,
+  "created_at": "2026-09-27T19:01:47",
+  "mission_id": "mission_2",
+  "student": {
+    "name": "Ishraq Chowdhury",
+    "student_id": "24005241",
+    "section": "CSCI 39536"
+  },
+  "explanations": {
+    "prediction": "I assume the forwad distance will underestimate its distance and go too forward. While the sideways distance will barley turn",
+    "calibration_analysis": "I predicted that the forward estimate would be too low and the robot would barely turn sideways. I learned that strafing means moving sideways without turning. I tuned the forward scale to 0.0494 inches per tick and the strafe scale to 0.0502 inches per tick. These control how encoder ticks become estimated forward and sideways distances. The sideways pod is necessary because the forward pod cannot measure sideways motion. The test passed with a maximum error of 0.80 inches and a final error of 0.37 inches, both below 3 inches. Some drift can remain because of wheel slip, sensor resolution, and small calibration errors that accumulate over time."
+  },
+  "params": {
+    "forwardInPerTick": 0.0499,
+    "strafeInPerTick": 0.0502
+  },
+  "metrics": {
+    "max_error_in": 0.2717087860191161,
+    "final_error_in": 0.2444290130078555,
+    "passed": true
+  },
+  "result": {
+    "passed": true,
+    "maxError": 0.2717087860191161,
+    "finalError": 0.2444290130078555,
+    "params": {
+      "forwardInPerTick": 0.0499,
+      "strafeInPerTick": 0.0502
+    }
+  },
+  "csv_files": {},
+  "activity_gifs": [
+    "latest_odometry_test.gif"
+  ]
+}
