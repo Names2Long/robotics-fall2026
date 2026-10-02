@@ -1,70 +1,69 @@
-# Week 5 — Sensors, Noise, and Uncertainty
+# Lab 5 — Sensors, Noise, and Uncertainty
 
-An individual, self-contained robotics lab delivered through Streamlit. Students characterize an assigned imperfect sensor, compare filtering and sensor-fusion strategies, and design context-sensitive safety policies for warehouse and assistive robots. ROS is intentionally not required: the lab concentrates on measurement, estimation, evidence, and decisions.
+An individual Streamlit lab connecting imperfect measurements, estimation, and decisions about people and robots. It runs locally without Docker, Gazebo, or ROS. Use Python 3.12 or newer and an internet connection for the first dependency installation.
 
-## Learning objectives
+## Start the guide
 
-By the end of the lab, a student can:
+From the repository root on Linux/macOS:
 
-- distinguish random noise, systematic bias, quantization, dropout, false detections, and outliers;
-- compute and interpret mean, median, variance, bias, and data availability;
-- compare moving-average, median, and exponential filters;
-- fuse a fast/noisy sensor with a slow/biased sensor;
-- quantify the trade-off between smoothing, error, availability, and response delay;
-- evaluate a decision rule using false-safe errors, unnecessary stops, detection delay, and collision events; and
-- explain why acceptable errors depend on the people, setting, and consequences involved.
+```bash
+cd week05_sensors_uncertainty
+bash run_lab.sh
+```
 
-## Student workflow
-
-1. **Sensor playground:** manipulate sensor properties and connect plots to statistics.
-2. **Mission 1 — Characterize:** analyze a repeatable, individually assigned dataset and diagnose its dominant defect.
-3. **Mission 2 — Filter and fuse:** record at least three configurations, including moving average and median, then select a configuration that satisfies quantitative criteria.
-4. **Mission 3 — Decide:** test separate warehouse and assistive policies across seven noisy scenarios and justify their social and technical trade-offs.
-5. **Final synthesis:** connect evidence from all three missions and generate a submission manifest.
-
-## Run the lab
-
-Python 3.10 or newer is recommended.
+On Windows, in PowerShell:
 
 ```powershell
 cd week05_sensors_uncertainty
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-streamlit run app.py
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\run_lab.ps1
 ```
 
-The app auto-saves locally. A student must use the same Course ID throughout because it deterministically selects their data. No network service or ROS installation is needed.
+The launcher creates a local virtual environment, installs pinned dependencies, checks the environment, and starts the guide. Leave the terminal running; open the local URL it displays. Do not use `sudo`. If Linux cannot create a virtual environment, install the distribution's Python venv package first.
 
-## Submission
+Alternatively, create and activate a Python virtual environment yourself, install `requirements.txt`, then run:
 
-This is an **individual lab**. Submit the complete `student_submission/` directory after the final page generates `manifest.json`. It contains:
+```bash
+python app.py --preflight
+python -m streamlit run app.py
+```
 
-- identity metadata and autosaved written responses;
-- Mission 1 measurements, statistics, diagnosis, and plot;
-- the complete Mission 2 experiment log, selected pipeline, time-series CSV, and plot;
-- both Mission 3 policies, scenario metrics, and written analysis; and
-- a file manifest for completeness checking.
+## Student route
 
-The app does not create a ZIP automatically, so students can inspect every artifact before uploading the folder to the LMS.
+1. Four connected walkthroughs explain sensor errors, worked filter outputs, weighted fusion, and response delay. Previous/Next and sidebar navigation support review.
+2. Mission 1: predict before seeing your assigned 240-reading dataset; calculate statistics, diagnose the sensor, and explain consequences.
+3. Mission 2: calculate moving-average, median, and fusion outputs; predict and record at least six distinct configurations covering three moving-average windows, a matched median comparison, and three fusion weights. Measure error, availability, and sustained response delay; justify a selected passing pipeline.
+4. Mission 3: predict and test a baseline and a distinct revision for both warehouse and assistive settings. Every policy runs all seven scenarios. Compare quantitative metrics, inspect individual decisions using scenario replay/tables, and explain context-dependent choices and limitations.
+5. Write a 150–250-word technical synthesis and a separate 1–300-word individual reflection. Check readiness, prepare the verified submission, and download its ZIP backup.
 
-## Instructor checks
+The delay measure requires three consecutive acceptable samples; available held estimates are not necessarily fresh evidence. Policy safety benchmarks are fixed by context, independent of the student's stopping threshold. Dangerous-command events are a risk proxy, not physical collisions.
 
-Run the dependency-light smoke test:
+## Saving and recovery
 
-```powershell
+Answers, settings, experiment histories, selected configuration, predictions, and location save locally. The Course ID determines repeatable data and locks once work begins. Save predictions before testing and explicitly check/save each mission; the guide does not automatically hide its results. Local autosave is not a remote backup.
+
+An unreadable primary autosave recovers the previous valid backup where possible. If both saves are unreadable, the guide stops without replacing them. Keep the folder intact and contact the instructor. Earlier-version experiments are archived and downloadable; answers are retained, but the revised requirements need new experiments and checks. Changing an answer or relevant policy setting invalidates affected completion; other missions are retained. Changed evidence requires a fresh export.
+
+## Submit your own work
+
+The starter contains only `student_submission/.gitkeep`. Generated student submissions are intentionally Git-trackable. The submission includes identity/autosave, measurements, calculations, experiment histories, plots, all seven policy traces for both contexts, explanations, synthesis, reflection, and a SHA-256 manifest. The ZIP is a backup, not an automatic upload.
+
+In your personal fork, from the repository root:
+
+```bash
+git status
+git add week05_sensors_uncertainty/student_submission
+git commit -m "Submit Lab 5"
+git push origin main
+```
+
+Inspect the GitHub commit's files and submit that commit URL through the course submission system. If Git reports conflicts, stop and preserve your work before asking for help.
+
+## Instructor verification
+
+```bash
+python app.py --preflight
 python app.py --smoke-test
-```
-
-Run the unit tests:
-
-```powershell
 python -m unittest discover -s tests -v
 ```
 
-See `content/instructor_notes.md` for timing, facilitation, grading evidence, and parameter rationale.
-
-
-## Required final reflection
-
-After the technical work, complete the individual [final reflection](../FINAL_REFLECTION.md). Respond to any or all of the five prompts in 1–300 words. A blank response or a response over 300 words cannot finalize the submission. The app saves the response as `student_submission/final_reflection.md`, separate from technical syntheses and mission explanations.
+Tests use temporary submission directories, never the starter. For instructor trials, set `WEEK05_SUBMISSION_DIR` to an absolute folder outside the repository before starting. Optional instructor navigation uses `WEEK05_INSTRUCTOR_PASSWORD`; it bypasses navigation only, never evidence checks. See [instructor notes](content/instructor_notes.md) and the [implementation plan](content/improvement_plan.md).

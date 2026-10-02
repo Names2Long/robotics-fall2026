@@ -14,6 +14,7 @@ def _close(answer, actual, tolerance):
 
 def evaluate(metrics: dict, profile_name: str, responses: dict):
     requirements = [
+        RequirementResult('prediction','Prediction preserved before inspecting data',len(str(responses.get('mission_1.prediction','')).strip())>=20,responses.get('mission_1.prediction',''),'at least 20 characters'),
         RequirementResult("mean", "Mean estimated", _close(responses.get("mission_1.mean"), metrics["mean"], 0.03), responses.get("mission_1.mean", ""), "within 0.03 m"),
         RequirementResult("variance", "Sample variance estimated", _close(responses.get("mission_1.variance"), metrics["variance"], max(0.004, metrics["variance"] * 0.18)), responses.get("mission_1.variance", ""), "within 18% (or 0.004 m²)"),
         RequirementResult("bias", "Bias estimated", _close(responses.get("mission_1.bias"), metrics["bias"], 0.03), responses.get("mission_1.bias", ""), "within 0.03 m"),

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import csv
 import io
 import os
 from pathlib import Path
@@ -114,6 +115,43 @@ class ValidationTests(unittest.TestCase):
             self.assertIn("submission.json", archive.namelist())
             self.assertIn("final_reflection.md", archive.namelist())
 
+    def test_interactive_odometry_summary_exports_real_saved_measurements(self) -> None:
+        result = valid_m2()
+        result["params"] = {"forwardInPerTick": 0.05, "strafeInPerTick": 0.052}
+        rows = list(csv.DictReader(io.StringIO(app.csv_for_odometry_activity(result))))
+        self.assertEqual(1, len(rows))
+        self.assertEqual("2.5", rows[0]["max_error_in"])
+        self.assertEqual("1.0", rows[0]["final_error_in"])
+        self.assertEqual("0.05", rows[0]["forward_in_per_tick"])
+        self.assertEqual("0.052", rows[0]["strafe_in_per_tick"])
+        with self.assertRaises(ValueError):
+            app.csv_for_odometry_activity({"maxError": 1.0})
+
+    def test_final_archive_accepts_a_saved_interactive_odometry_result(self) -> None:
+        result = valid_m2()
+        archive_bytes = app.build_final_submission_zip(
+            {
+                "mission_2": {
+                    "params": result["params"],
+                    "metrics": {"max_error_in": result["maxError"]},
+                    "result": result,
+                    "csv_files": {"odometry_test_summary.csv": app.csv_for_odometry_activity(result)},
+                    "figures": {},
+                    "activity_gifs": {},
+                },
+            },
+            {"mission_2": {"analysis": "Complete"}},
+            {"final_reflection": "Complete"},
+            {"name": "Test Student", "student_id": "test@example.edu", "section": "01"},
+        )
+        with zipfile.ZipFile(io.BytesIO(archive_bytes)) as archive:
+            self.assertIn("mission_2/odometry_test_summary.csv", archive.namelist())
+            self.assertNotIn("mission_2/odometry_run.csv", archive.namelist())
+            rows = list(csv.DictReader(io.StringIO(
+                archive.read("mission_2/odometry_test_summary.csv").decode("utf-8")
+            )))
+            self.assertEqual("2.5", rows[0]["max_error_in"])
+
 
 class StreamlitFlowTests(unittest.TestCase):
     @classmethod
@@ -169,6 +207,14 @@ class StreamlitFlowTests(unittest.TestCase):
         save_buttons = [button for button in test_app.button if button.label == "Save complete submission folder"]
         self.assertEqual(1, len(save_buttons))
         self.assertTrue(save_buttons[0].disabled)
+
+    def test_export_page_accepts_a_restored_mission_2_dictionary(self) -> None:
+        test_app = self.new_app()
+        test_app.session_state["stage"] = "export"
+        test_app.session_state["m2_result"] = valid_m2()
+        test_app.session_state["m2_passed"] = True
+        test_app.run(timeout=25)
+        self.assertEqual([], list(test_app.exception))
 
     def test_autosave_is_restored_in_a_new_session(self) -> None:
         response_key = app.checkin_key("background_compare", "note")

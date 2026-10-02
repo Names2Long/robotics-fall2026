@@ -1,6 +1,7 @@
 from __future__ import annotations
 from dataclasses import asdict,dataclass
 import math, random
+from statistics import median as sample_median
 
 @dataclass(frozen=True)
 class SensorConfig:
@@ -37,13 +38,13 @@ def static_samples(true_value:float,count:int,config:SensorConfig,seed:int)->lis
 
 def sample_metrics(samples:list[float|None],true_value:float)->dict[str,float|int]:
     valid=[float(value) for value in samples if value is not None]; n=len(valid)
-    mean=sum(valid)/n if n else math.nan; ordered=sorted(valid); median=(ordered[(n-1)//2]+ordered[n//2])/2 if n else math.nan
+    mean=sum(valid)/n if n else math.nan; median=sample_median(valid) if n else math.nan
     variance=sum((value-mean)**2 for value in valid)/(n-1) if n>1 else 0.0
-    robust_scale=max(0.02,1.4826*((sorted(abs(value-median) for value in valid)[n//2]) if n else 0.0)); outliers=sum(abs(value-median)>max(0.30,3*robust_scale) for value in valid)
+    robust_scale=1.4826*sample_median([abs(value-median) for value in valid]) if n else 0.0
+    outliers=sum(abs(value-median)>max(0.30,3*robust_scale) for value in valid)
     return {"count":len(samples),"valid_count":n,"dropout_count":len(samples)-n,"mean":mean,"median":median,"variance":variance,"standard_deviation":math.sqrt(variance),"bias":mean-true_value,"outlier_count":outliers}
 
 def profile_for_seed(seed:int)->tuple[str,SensorConfig]:
     names=tuple(PROFILES); name=names[seed%len(names)]; return name,PROFILES[name]
 
 def config_dict(config:SensorConfig): return asdict(config)
-

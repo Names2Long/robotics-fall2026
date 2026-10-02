@@ -1382,6 +1382,31 @@ def csv_for_odom(result: OdomResult) -> str:
     return buffer.getvalue()
 
 
+def csv_for_odometry_activity(result: dict[str, Any]) -> str:
+    """Export the measurements saved by the interactive pod-calibration activity.
+
+    Its component returns a summary dictionary, not the time-series OdomResult
+    produced by the separate Python simulator. Older saved attempts have no
+    trajectory samples, so this CSV must not manufacture them.
+    """
+    passed, message = validate_mission_2_result(result)
+    if not passed:
+        raise ValueError(f"No valid Mission 2 test to export: {message}")
+    params = result["params"]
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow([
+        "max_error_in", "final_error_in", "forward_in_per_tick",
+        "strafe_in_per_tick", "passed_server_check",
+    ])
+    writer.writerow([
+        result["maxError"], result["finalError"],
+        params.get("forwardInPerTick", ""),
+        params.get("strafeInPerTick", ""), passed,
+    ])
+    return buffer.getvalue()
+
+
 def csv_for_baseline(trials: list[OpenLoopTrial]) -> str:
     buffer = io.StringIO()
     writer = csv.writer(buffer)
@@ -3131,7 +3156,7 @@ def render_mission_2(context: dict[str, Any]) -> None:
             "params": params,
             "metrics": st.session_state.get("m2_metrics", {}),
             "result": component_state_without_recording(result),
-            "csv_files": {},
+            "csv_files": {"odometry_test_summary.csv": csv_for_odometry_activity(result)},
             "figures": {},
             "activity_gifs": activity_gifs,
         }
@@ -3789,10 +3814,17 @@ def render_export_page() -> None:
         all_mission_data["mission_2"] = {
             "params": st.session_state.get("m2_params", {}),
             "metrics": st.session_state.get("m2_metrics", {}),
-            "csv_files": {"odometry_run.csv": csv_for_odom(result)},
-            "figures": {"odometry_plot.png": plot_odometry(result)},
+            "result": result,
+            "csv_files": {"odometry_test_summary.csv": csv_for_odometry_activity(result)}
+            if validate_mission_2_result(result)[0] else {},
+            "figures": {},
             "activity_gifs": activity_gifs_from_state("mission_2"),
         }
+        st.caption(
+            "Mission 2 exports the recorded calibration errors and pod scales, "
+            "plus its activity GIF when available. The interactive activity did "
+            "not record a time-series path, so no path CSV or plot is generated."
+        )
 
     if st.session_state.get("m3_result"):
         result = st.session_state["m3_result"]
