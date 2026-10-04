@@ -1,0 +1,34 @@
+{
+  "files": {
+    "autosave/responses.json": "bf785cf7d04c3f7db1bf3bba2cbe996be2200fe4dd643b4e81d2a1e413eb827b",
+    "autosave/responses.md": "dcb22d343314e76cfd9f987d280e2f91663e828cd31f1afe2586036e85bb390a",
+    "final_reflection.md": "005d13b85c5b79ab98803add4548f4fee4fb2e6b8a4862627e0047b056fe3429",
+    "final_synthesis.md": "025bf0c28c105df61b502d68c321bed4141634444afd42cda38afed3150f184e",
+    "mission_1/evidence.png": "742c4d8d05d5e7834f881d916089e4be2840ceb5618e9a1f99166a71e6eb7feb",
+    "mission_1/explanation.md": "e781f8298c6ab2f62b77ad9cfbd73e9720d9db7249e74e530b5756e34db18286",
+    "mission_1/measurements.csv": "5b6971d46e1b6685b380d4fac7a8f178bb8fb327b77fc12b46d857c147a77787",
+    "mission_1/submission.json": "22a3d2a928b37fd74d397ec4e72b15cc0d9484c3f339aea4cf9cbc867245472f",
+    "mission_2/evidence.png": "d155aaf71f73e920f91216fa06ee7f9eca09fdb765c4c3f328a915aa482e4321",
+    "mission_2/explanation.md": "a77d578537edf40c4ebfae958af05710b17cc8bcaa7dbe06032d889bd9dbce3a",
+    "mission_2/measurements.csv": "fa36aa9a818c2cb3955c17f1c2e5314abf81d673e17fae4c7ff59313b9ea0170",
+    "mission_2/submission.json": "8dda90d4ad66b87eb819a2b3363f1e55199a1ed493f7b3745b74e3fccb7651e7",
+    "mission_3/explanation.md": "1efc588844bcbb0372a2ad5be243cb7f7f749c76e93cb255f6243f7418e31a1d",
+    "mission_3/measurements.csv": "68d1f8020c179323b4fbc142eb77d40e82100613321cffe0dc3de6ac731b7d8d",
+    "mission_3/submission.json": "05d4c77b848d4104875de3aa167603066c46ab6e1e5b4267b326cb1e55a1b809",
+    "student.json": "6e98534bfe186d309b4ec025b0446f62b56bdba26a741b9b28537e9a464e7176"
+  },
+  "generated_at": "2026-10-04T20:19:51.672055+00:00",
+  "lab_id": "week05_sensors_uncertainty",
+  "mission_signatures": {
+    "mission_1": "f11e8c1f087a4ec1",
+    "mission_2": "cc61954cc35697d4",
+    "mission_3": "aa1a26561390e519"
+  },
+  "response_signature": "82f609739626b5b1",
+  "schema_version": 2,
+  "student": {
+    "course_id": "CSCI 39536",
+    "email": "ASIL.CHOWDHURY41@stu-mail.hunter.cuny.edu",
+    "name": "Ishraq Chowdhury"
+  }
+}

@@ -1,0 +1,7 @@
+# Final synthesis
+
+This lab showed how sensor imperfections affect estimation and robot decisions. In Mission 1, my sensor had a mean of 1.9859 m and a bias of −0.0141 m, with sample variance of 0.004307 m^2. Most readings were 2.00 or 1.90 m, indicating coarse resolution. There were six dropouts and one outlier. More samples wouldn’t remove the limited resolution of individual readings.
+
+In Mission 2, increasing the moving average window from 3 to 11 increased RMSE from 0.1395 to 0.1601 m, while measured response delay remained 1.10 s. More smoothing therefore did not guarantee better overall accuracy. I selected median filtering with window 3 and equal sensor weights because it achieved the lowest recorded RMSE, 0.1270 m, with a 0.90 s delay and 100% availability. However, availability included held estimates rather than exclusively fresh measurements.
+
+Mission 3 connected these estimates to consequences for people. Recorded warehouse revisions reduced maximum detection delay from 0.10 to 0.00 s, but the false safe rate remained 0.6173%. Assistive revisions reduced delay from 0.05 to 0.00 s while maintaining a zero false safe rate. These results show why policies must balance unsafe movement against unnecessary interruptions. Seven simulated scenarios provide useful comparative evidence, but zero dangerous command events do not prove physical safety. Deployment would require stakeholder input and testing of real stopping distances, sensor failures, and operating conditions.
