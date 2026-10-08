@@ -1,5 +1,5 @@
 from lab.autosave import submission_root,_atomic,save
-from lab.completion import mission_status
+from lab.completion import mission_status,current_check
 from lab.final_reflection import render_final_reflection,write_final_reflection
 from lab.submissions import write_manifest,manifest_current,submission_zip
 from lab.ui import text_response
@@ -14,6 +14,14 @@ def render(st):
     checks.extend([('Student name, email and Course ID',all(str(v).strip() for v in st.session_state['student'].values())),('Synthesis contains 150–250 words',150<=words<=250),('Reflection contains 1–300 words',reflection)])
     st.subheader('Submission readiness')
     st.dataframe([{'Requirement':name,'Status':'Ready' if ready else 'Not yet'} for name,ready in checks],hide_index=True,width='stretch')
+    for mission_id,ready in status.items():
+        if not ready:
+            check,_,_=current_check(st,mission_id)
+            missing=[requirement.label for requirement in check.requirements if not requirement.passed]
+            if missing:
+                st.info(mission_id.replace('_',' ').title()+' needs: '+', '.join(missing)+'. Revisit it from Lab navigation.')
+            else:
+                st.info(mission_id.replace('_',' ').title()+' needs current saved evidence. Revisit it from Lab navigation and check/save the mission.')
     if st.button('Prepare submission',disabled=not all(v for _,v in checks),type='primary'):
         write_final_reflection(st);_atomic(submission_root()/'final_synthesis.md','# Final synthesis\n\n'+synthesis.strip())
         save(st);write_manifest(st);st.success('Submission prepared and checked. Download a backup, then commit and push your own work.')

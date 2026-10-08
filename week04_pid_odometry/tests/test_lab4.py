@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import csv
 import io
+import json
 import os
 from pathlib import Path
 import sys
@@ -10,6 +11,7 @@ import tempfile
 from types import SimpleNamespace
 import unittest
 import zipfile
+from unittest.mock import patch
 
 
 LAB_ROOT = Path(__file__).resolve().parents[1]
@@ -61,6 +63,65 @@ def valid_m3() -> dict:
 
 
 class ValidationTests(unittest.TestCase):
+    def test_navigation_does_not_replace_saved_answers_with_hidden_widgets(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="lab4-save-test-") as folder:
+            root = Path(folder)
+            state = SimpleNamespace(session_state={
+                "stage": "background",
+                "_lab4_checkins": {"background_compare": "My original answer."},
+            })
+            with patch.object(app, "st", state), patch.object(app, "SUBMISSIONS_DIR", root), patch.object(app, "AUTOSAVE_DIR", root / "autosave"), patch.object(app, "AUTOSAVE_RESPONSES_FILE", root / "autosave" / "responses.json"), patch.object(app, "AUTOSAVE_PROGRESS_FILE", root / "autosave" / "progress.json"):
+                app.autosave_responses_and_gifs()
+                state.session_state["stage"] = "export"
+                state.session_state.pop(app.checkin_key("background_compare", "note"), None)
+                app.autosave_responses_and_gifs()
+                saved = json.loads(app.AUTOSAVE_RESPONSES_FILE.read_text(encoding="utf-8"))
+                self.assertEqual("My original answer.", saved["checkins"]["background_compare"])
+                self.assertEqual("My original answer.", app.checkin_response("background_compare")["note"])
+
+    def test_older_autosave_restores_and_unreadable_save_is_protected(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="lab4-recovery-test-") as folder:
+            root = Path(folder)
+            autosave = root / "autosave"
+            autosave.mkdir()
+            responses = autosave / "responses.json"
+            responses.write_text(json.dumps({"schema_version": 1, "checkins": {"m1_prediction": "An earlier prediction."}, "identity": {"name": "Student"}}), encoding="utf-8")
+            state = SimpleNamespace(session_state={})
+            with patch.object(app, "st", state), patch.object(app, "SUBMISSIONS_DIR", root), patch.object(app, "AUTOSAVE_DIR", autosave), patch.object(app, "AUTOSAVE_RESPONSES_FILE", responses), patch.object(app, "AUTOSAVE_PROGRESS_FILE", autosave / "progress.json"):
+                app.restore_autosave_if_available()
+                self.assertEqual("An earlier prediction.", app.checkin_response("m1_prediction")["note"])
+                self.assertEqual("Student", state.session_state["_lab4_identity"]["name"])
+                responses.write_text("{broken", encoding="utf-8")
+                state.session_state.clear()
+                app.restore_autosave_if_available()
+                self.assertTrue(state.session_state["_recovery_blocked"])
+                app.autosave_responses_and_gifs()
+                self.assertEqual("{broken", responses.read_text(encoding="utf-8"))
+
+    def test_mission_progress_recovers_previous_valid_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="lab4-progress-test-") as folder:
+            root = Path(folder)
+            autosave = root / "autosave"
+            autosave.mkdir()
+            progress = autosave / "progress.json"
+            progress.write_text("{broken", encoding="utf-8")
+            progress.with_suffix(".bak").write_text(json.dumps({
+                "schema_version": app.LAB_STATE_VERSION,
+                "stage": "export",
+                "mission_progress": list(app.MISSION_ORDER),
+                "missions": {
+                    mission: {"passed": True, "result": result}
+                    for mission, result in zip(app.MISSION_ORDER, (valid_m1(), valid_m2(), valid_m3()))
+                },
+            }), encoding="utf-8")
+            state = SimpleNamespace(session_state={})
+            with patch.object(app, "st", state), patch.object(app, "SUBMISSIONS_DIR", root), patch.object(app, "AUTOSAVE_DIR", autosave), patch.object(app, "AUTOSAVE_RESPONSES_FILE", autosave / "responses.json"), patch.object(app, "AUTOSAVE_PROGRESS_FILE", progress):
+                app.restore_autosave_if_available()
+                self.assertEqual(list(app.MISSION_ORDER), state.session_state["mission_progress"])
+                app.autosave_responses_and_gifs()
+                self.assertTrue(list(autosave.glob("progress.unreadable.*.json")))
+                self.assertEqual(list(app.MISSION_ORDER), json.loads(progress.read_text(encoding="utf-8"))["mission_progress"])
+
     def test_mission_validators_accept_good_results(self) -> None:
         self.assertTrue(app.validate_mission_1_result(valid_m1())[0])
         self.assertTrue(app.validate_mission_2_result(valid_m2())[0])
@@ -231,6 +292,44 @@ class StreamlitFlowTests(unittest.TestCase):
             "My restored comparison.",
             second_session.session_state[response_key],
         )
+
+    def test_completed_student_can_revisit_mission_and_save_missing_answer(self) -> None:
+        autosave = Path(self.test_output.name) / "autosave"
+        autosave.mkdir(parents=True)
+        (autosave / "responses.json").write_text(json.dumps({
+            "schema_version": app.LAB_STATE_VERSION,
+            "checkins": {
+                key: "A completed response with evidence."
+                for key in app.ALL_CHECKIN_KEYS if key != "m1_prediction"
+            },
+            "identity": {"name": "Test Student", "student_id": "test@example.edu", "section": "01"},
+        }), encoding="utf-8")
+        (autosave / "progress.json").write_text(json.dumps({
+            "schema_version": app.LAB_STATE_VERSION,
+            "stage": "export",
+            "mission_progress": list(app.MISSION_ORDER),
+            "missions": {
+                mission: {"passed": True, "result": result, "params": {}, "metrics": {}}
+                for mission, result in zip(app.MISSION_ORDER, (valid_m1(), valid_m2(), valid_m3()))
+            },
+        }), encoding="utf-8")
+        test_app = self.new_app().run(timeout=25)
+        self.assertEqual([], list(test_app.exception))
+        self.assertTrue(test_app.button(key="review_mission_1"))
+        test_app.button(key="review_mission_1").click().run(timeout=25)
+        self.assertEqual([], list(test_app.exception))
+        self.assertEqual(list(app.MISSION_ORDER), test_app.session_state["mission_progress"])
+        test_app.text_area(key=app.checkin_key("m1_prediction", "note")).set_value("My recovered prediction.").run(timeout=25)
+        self.assertEqual("My recovered prediction.", test_app.session_state["_lab4_checkins"]["m1_prediction"])
+        test_app.button(key="review_export").click().run(timeout=25)
+        self.assertEqual([], list(test_app.exception))
+        self.assertEqual(list(app.MISSION_ORDER), test_app.session_state["mission_progress"])
+        save_button = next(button for button in test_app.button if button.label == "Save complete submission folder")
+        self.assertFalse(save_button.disabled)
+        save_button.click().run(timeout=25)
+        self.assertEqual([], list(test_app.exception))
+        saved = json.loads((autosave / "responses.json").read_text(encoding="utf-8"))
+        self.assertEqual("My recovered prediction.", saved["checkins"]["m1_prediction"])
 
 
 if __name__ == "__main__":

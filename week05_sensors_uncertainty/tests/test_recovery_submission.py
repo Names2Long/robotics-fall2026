@@ -7,8 +7,16 @@ from lab.completion import current_check,refresh_completion
 from lab.session import complete_mission
 from lab.submissions import save_mission,write_manifest,manifest_current,submission_zip
 from lab.final_reflection import write_final_reflection
+from lab.session import sync_widgets
 
 class StorageTests(unittest.TestCase):
+    def test_hidden_blank_widget_cannot_erase_saved_answer(self):
+        st=valid_state();st.session_state['stage']='final'
+        original=st.session_state['responses']['mission_1.prediction']
+        st.session_state['field.mission_1.prediction']=''
+        sync_widgets(st)
+        self.assertEqual(st.session_state['responses']['mission_1.prediction'],original)
+
     def setUp(self):
         self.directory=tempfile.TemporaryDirectory();self.addCleanup(self.directory.cleanup)
         self.environment=patch.dict(os.environ,{'WEEK05_SUBMISSION_DIR':self.directory.name});self.environment.start();self.addCleanup(self.environment.stop)

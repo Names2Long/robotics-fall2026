@@ -383,6 +383,8 @@ def request_streamlit_rerun() -> None:
 
 
 def set_stage(stage: str) -> None:
+    # A navigation button reruns the script before the normal end-of-page save.
+    autosave_responses_and_gifs()
     st.session_state["stage"] = stage
     st.session_state["scroll_to_top_pending"] = True
     request_streamlit_rerun()
@@ -391,7 +393,8 @@ def set_stage(stage: str) -> None:
 def scroll_to_top_if_requested() -> None:
     if not st.session_state.pop("scroll_to_top_pending", False):
         return
-    st.html(
+    try:
+        st.html(
         """
         <script>
         function scrollToTop() {
@@ -403,8 +406,11 @@ def scroll_to_top_if_requested() -> None:
         setTimeout(scrollToTop, 180);
         </script>
         """,
-        unsafe_allow_javascript=True,
-    )
+            unsafe_allow_javascript=True,
+        )
+    except (AttributeError, TypeError):
+        # Older installed Streamlit versions do not support this optional API.
+        pass
 
 
 def set_sidebar_default_for_stage(*, expanded: bool) -> None:
@@ -524,9 +530,28 @@ def checkin_key(key: str, suffix: str) -> str:
 
 
 def checkin_response(key: str) -> dict[str, Any]:
-    note = str(st.session_state.get(checkin_key(key, "note"), "")).strip()
-    choice = str(st.session_state.get(checkin_key(key, "choice"), "")).strip()
-    return {"note": note, "choice": choice, "complete": bool(note or choice)}
+    saved = st.session_state.get("_lab4_checkins", {})
+    value = str(saved.get(key, "")).strip() if key in saved else (
+        str(st.session_state.get(checkin_key(key, "note"), "")).strip()
+        or str(st.session_state.get(checkin_key(key, "choice"), "")).strip()
+    )
+    return {"note": value, "choice": "", "complete": bool(value)}
+
+
+def record_checkin(key: str) -> None:
+    """Copy a rendered widget into durable state, including intentional edits."""
+    value = str(st.session_state.get(checkin_key(key, "note"), "")).strip() or str(
+        st.session_state.get(checkin_key(key, "choice"), "")
+    ).strip()
+    st.session_state["_lab4_checkins"] = {
+        **st.session_state.get("_lab4_checkins", {}), key: value,
+    }
+
+
+def record_identity(field: str, value: str) -> None:
+    st.session_state["_lab4_identity"] = {
+        **st.session_state.get("_lab4_identity", {}), field: value.strip(),
+    }
 
 
 def render_checkin(
@@ -539,6 +564,10 @@ def render_checkin(
     placeholder: str = "",
     required: bool = True,
 ) -> dict[str, Any]:
+    saved = st.session_state.get("_lab4_checkins", {})
+    note_key = checkin_key(key, "note")
+    if note_key not in st.session_state and saved.get(key):
+        st.session_state[note_key] = saved[key]
     st.markdown(CHECKIN_STYLE, unsafe_allow_html=True)
     st.markdown(
         '<div class="checkin-card">'
@@ -566,6 +595,7 @@ def render_checkin(
         height=90,
         placeholder=placeholder,
     )
+    record_checkin(key)
     response = checkin_response(key)
     if required and not response["complete"]:
         st.caption("Answer this check-in to continue.")
@@ -725,35 +755,42 @@ def render_mission_explanations(mission_id: str) -> dict[str, str]:
 def mission_explanations_from_state(mission_id: str) -> dict[str, str]:
     keys = {
         "mission_1": {
-            "prediction": checkin_key("m1_prediction", "note"),
-            "tuning_analysis": checkin_key("m1_arm_tuning", "note"),
+            "prediction": "m1_prediction",
+            "tuning_analysis": "m1_arm_tuning",
         },
         "mission_2": {
-            "prediction": checkin_key("m2_prediction", "note"),
-            "calibration_analysis": checkin_key("m2_analysis", "note"),
+            "prediction": "m2_prediction",
+            "calibration_analysis": "m2_analysis",
         },
         "mission_3": {
-            "technical_analysis": checkin_key("m3_technical", "note"),
-            "human_centered_analysis": checkin_key("m3_human", "note"),
+            "technical_analysis": "m3_technical",
+            "human_centered_analysis": "m3_human",
         },
     }
     return {
-        label: str(st.session_state.get(state_key, "")).strip()
-        for label, state_key in keys.get(mission_id, {}).items()
+        label: checkin_response(checkin)["note"]
+        for label, checkin in keys.get(mission_id, {}).items()
     }
 
 
 def render_student_identity() -> dict[str, str]:
+    saved = st.session_state.get("_lab4_identity", {})
+    for field, state_key in (("name", "student_name"), ("student_id", "student_id"), ("section", "student_section")):
+        if state_key not in st.session_state and saved.get(field):
+            st.session_state[state_key] = saved[field]
     with st.expander("Student info for the export", expanded=False):
         st.caption("Your name and student ID or email are required for the final submission. Section is optional.")
         st.text_input("Name", key="student_name")
         st.text_input("Student ID or email", key="student_id")
         st.text_input("Section", key="student_section")
-    return {
+    identity = {
         "name": str(st.session_state.get("student_name", "")).strip(),
         "student_id": str(st.session_state.get("student_id", "")).strip(),
         "section": str(st.session_state.get("student_section", "")).strip(),
     }
+    for field, value in identity.items():
+        record_identity(field, value)
+    return identity
 
 
 # ---------------------------------------------------------------------------
@@ -1748,12 +1785,12 @@ ALL_CHECKIN_KEYS = (
 
 def collect_text_responses() -> dict[str, Any]:
     """Gather every check-in answer and mission explanation currently in session."""
-    checkins = {}
+    checkins = dict(st.session_state.get("_lab4_checkins", {}))
     for key in ALL_CHECKIN_KEYS:
-        resp = checkin_response(key)
-        value = resp["note"] or resp["choice"]
-        if value:
-            checkins[key] = value
+        if key not in checkins:
+            value = checkin_response(key)["note"]
+            if value:
+                checkins[key] = value
 
     explanations = {}
     for mission_id in MISSION_ORDER:
@@ -1761,14 +1798,16 @@ def collect_text_responses() -> dict[str, Any]:
         if answers:
             explanations[mission_id] = answers
 
-    identity = {
-        "name": str(st.session_state.get("student_name", "")).strip()
-        or str(st.session_state.get("export_student_name", "")).strip(),
-        "student_id": str(st.session_state.get("student_id", "")).strip()
-        or str(st.session_state.get("export_student_id", "")).strip(),
-        "section": str(st.session_state.get("student_section", "")).strip()
-        or str(st.session_state.get("export_student_section", "")).strip(),
-    }
+    identity = dict(st.session_state.get("_lab4_identity", {}))
+    for field, regular, export in (
+        ("name", "student_name", "export_student_name"),
+        ("student_id", "student_id", "export_student_id"),
+        ("section", "student_section", "export_student_section"),
+    ):
+        if not identity.get(field):
+            identity[field] = str(st.session_state.get(regular, "")).strip() or str(
+                st.session_state.get(export, "")
+            ).strip()
     return {"identity": identity, "checkins": checkins, "explanations": explanations}
 
 
@@ -1808,30 +1847,86 @@ def restore_autosave_if_available() -> None:
     if st.session_state.get("_autosave_restore_checked"):
         return
     st.session_state["_autosave_restore_checked"] = True
-    if not AUTOSAVE_RESPONSES_FILE.exists() and not AUTOSAVE_PROGRESS_FILE.exists():
+    if not any(path.exists() for path in (
+        AUTOSAVE_RESPONSES_FILE, AUTOSAVE_RESPONSES_FILE.with_suffix(".bak"),
+        AUTOSAVE_PROGRESS_FILE, AUTOSAVE_PROGRESS_FILE.with_suffix(".bak"),
+    )):
         return
     restored_items = 0
     try:
-        if AUTOSAVE_RESPONSES_FILE.exists():
-            responses = json.loads(AUTOSAVE_RESPONSES_FILE.read_text(encoding="utf-8"))
-            if int(responses.get("schema_version", 0)) == LAB_STATE_VERSION:
-                for key, value in responses.get("checkins", {}).items():
-                    if key in ALL_CHECKIN_KEYS and str(value).strip():
-                        st.session_state.setdefault(checkin_key(key, "note"), str(value))
-                        restored_items += 1
-                identity = responses.get("identity", {})
-                if isinstance(identity, dict):
-                    for field, state_key in (
-                        ("name", "student_name"),
-                        ("student_id", "student_id"),
-                        ("section", "student_section"),
-                    ):
-                        if str(identity.get(field, "")).strip():
-                            st.session_state.setdefault(state_key, str(identity[field]))
-                            st.session_state.setdefault(f"export_{state_key}", str(identity[field]))
-        if AUTOSAVE_PROGRESS_FILE.exists():
-            progress = json.loads(AUTOSAVE_PROGRESS_FILE.read_text(encoding="utf-8"))
-            if int(progress.get("schema_version", 0)) == LAB_STATE_VERSION:
+        response_backup = AUTOSAVE_RESPONSES_FILE.with_suffix(".bak")
+        responses = None
+        for candidate in (AUTOSAVE_RESPONSES_FILE, response_backup):
+            if not candidate.exists():
+                continue
+            try:
+                loaded = json.loads(candidate.read_text(encoding="utf-8"))
+                if not isinstance(loaded, dict) or not isinstance(loaded.get("checkins", {}), dict):
+                    raise ValueError("invalid response structure")
+                if not isinstance(loaded.get("identity", {}), dict):
+                    raise ValueError("invalid identity structure")
+                if int(loaded.get("schema_version", 0)) not in (1, LAB_STATE_VERSION):
+                    raise ValueError("unsupported response version")
+                responses = loaded
+                if candidate == response_backup:
+                    st.session_state["_recovery_primary_unreadable"] = AUTOSAVE_RESPONSES_FILE.exists()
+                    st.session_state["_recovery_notice"] = "Recovered the previous response snapshot; the latest save was unreadable."
+                break
+            except (OSError, ValueError, TypeError, json.JSONDecodeError):
+                continue
+        if responses is None and (AUTOSAVE_RESPONSES_FILE.exists() or response_backup.exists()):
+            st.session_state["_recovery_blocked"] = True
+            st.session_state["_recovery_error"] = "Response autosave cannot be read. No saved work will be overwritten; back up student_submission and contact the instructor."
+            return
+        if responses is not None:
+            restored_checkins = {
+                key: str(value) for key, value in responses.get("checkins", {}).items()
+                if key in ALL_CHECKIN_KEYS
+            }
+            st.session_state["_lab4_checkins"] = {
+                **restored_checkins, **st.session_state.get("_lab4_checkins", {})
+            }
+            for key, value in restored_checkins.items():
+                if value.strip():
+                    st.session_state.setdefault(checkin_key(key, "note"), value)
+                    restored_items += 1
+            identity = {
+                field: str(responses.get("identity", {}).get(field, ""))
+                for field in ("name", "student_id", "section")
+            }
+            st.session_state["_lab4_identity"] = {
+                **identity, **st.session_state.get("_lab4_identity", {})
+            }
+            for field, state_key in (
+                ("name", "student_name"),
+                ("student_id", "student_id"),
+                ("section", "student_section"),
+            ):
+                if identity[field].strip():
+                    st.session_state.setdefault(state_key, identity[field])
+                    st.session_state.setdefault(f"export_{state_key}", identity[field])
+        progress = None
+        for candidate in (AUTOSAVE_PROGRESS_FILE, AUTOSAVE_PROGRESS_FILE.with_suffix(".bak")):
+            if not candidate.exists():
+                continue
+            try:
+                loaded = json.loads(candidate.read_text(encoding="utf-8"))
+                if not isinstance(loaded, dict) or int(loaded.get("schema_version", 0)) != LAB_STATE_VERSION:
+                    raise ValueError("invalid progress structure or version")
+                if not isinstance(loaded.get("missions", {}), dict):
+                    raise ValueError("invalid mission structure")
+                progress = loaded
+                if candidate != AUTOSAVE_PROGRESS_FILE:
+                    st.session_state["_recovery_progress_primary_unreadable"] = AUTOSAVE_PROGRESS_FILE.exists()
+                    st.session_state["_recovery_notice"] = "Recovered the previous mission progress snapshot."
+                break
+            except (OSError, ValueError, TypeError):
+                continue
+        if progress is None and (AUTOSAVE_PROGRESS_FILE.exists() or AUTOSAVE_PROGRESS_FILE.with_suffix(".bak").exists()):
+            st.session_state["_recovery_blocked"] = True
+            st.session_state["_recovery_error"] = "Mission progress autosave cannot be read. No saved work will be overwritten; back up student_submission and contact the instructor."
+            return
+        if progress is not None:
                 valid_progress: list[str] = []
                 missions = progress.get("missions", {})
                 preceding_valid = True
@@ -1865,6 +1960,7 @@ def restore_autosave_if_available() -> None:
                 f"Recovered {restored_items} saved response or mission item(s) from this lab folder."
             )
     except Exception as error:
+        st.session_state["_recovery_blocked"] = True
         st.session_state["_recovery_error"] = f"Saved work could not be restored: {error}"
 
 
@@ -1903,6 +1999,8 @@ def autosave_responses_and_gifs() -> None:
     rerun, without requiring a button press.  Writes only when content has changed
     (tracked by a hash in session state) and never raises into the UI."""
     try:
+        if st.session_state.get("_recovery_blocked"):
+            return
         responses = collect_text_responses()
 
         gifs: dict[str, dict[str, bytes]] = {}
@@ -1937,8 +2035,34 @@ def autosave_responses_and_gifs() -> None:
             **responses,
             "activity_gifs": gif_manifest,
         }
+        if st.session_state.pop("_recovery_primary_unreadable", False) and AUTOSAVE_RESPONSES_FILE.exists():
+            archive = AUTOSAVE_DIR / f"responses.unreadable.{datetime.now().strftime('%Y%m%dT%H%M%S%f')}.json"
+            AUTOSAVE_RESPONSES_FILE.replace(archive)
+        if AUTOSAVE_RESPONSES_FILE.exists():
+            previous_text = AUTOSAVE_RESPONSES_FILE.read_text(encoding="utf-8")
+            previous = json.loads(previous_text)
+            if not isinstance(previous, dict) or not isinstance(previous.get("checkins", {}), dict):
+                raise ValueError("Existing response save is invalid; refusing to overwrite it")
+            _atomic_write_text(AUTOSAVE_RESPONSES_FILE.with_suffix(".bak"), previous_text)
+            removed = {
+                key for key, value in previous.get("checkins", {}).items()
+                if str(value).strip() and not str(responses["checkins"].get(key, "")).strip()
+            }
+            if removed:
+                recovery_path = AUTOSAVE_DIR / f"responses.recovery.{datetime.now().strftime('%Y%m%dT%H%M%S%f')}.json"
+                _atomic_write_text(recovery_path, previous_text)
         _atomic_write_text(AUTOSAVE_RESPONSES_FILE, json.dumps(payload, indent=2, default=str))
         _atomic_write_text(AUTOSAVE_DIR / "responses.md", _text_responses_markdown(responses))
+        if st.session_state.get("_recovery_progress_primary_unreadable") and AUTOSAVE_PROGRESS_FILE.exists():
+            archive = AUTOSAVE_DIR / f"progress.unreadable.{datetime.now().strftime('%Y%m%dT%H%M%S%f')}.json"
+            AUTOSAVE_PROGRESS_FILE.replace(archive)
+            st.session_state.pop("_recovery_progress_primary_unreadable", None)
+        if AUTOSAVE_PROGRESS_FILE.exists():
+            previous_progress = AUTOSAVE_PROGRESS_FILE.read_text(encoding="utf-8")
+            saved_progress = json.loads(previous_progress)
+            if not isinstance(saved_progress, dict):
+                raise ValueError("Existing progress save is invalid; refusing to overwrite it")
+            _atomic_write_text(AUTOSAVE_PROGRESS_FILE.with_suffix(".bak"), previous_progress)
         _atomic_write_text(
             AUTOSAVE_PROGRESS_FILE,
             json.dumps({**progress, "saved_at": payload["saved_at"]}, indent=2, default=str),
@@ -2886,8 +3010,6 @@ def render_mission_1(context: dict[str, Any]) -> None:
 
     current_signature = result_signature(arm_result)
     checked_signature = st.session_state.get("m1_checked_signature")
-    if checked_signature and checked_signature != current_signature:
-        invalidate_mission_and_following("mission_1")
 
     render_completion_checklist([
         ("Prediction saved before tuning", prediction["complete"], "write the prediction"),
@@ -2907,6 +3029,8 @@ def render_mission_1(context: dict[str, Any]) -> None:
         type="primary",
         disabled=not prediction["complete"] or not arm_checkin["complete"] or not arm_activity_ready,
     ):
+        if checked_signature and checked_signature != current_signature:
+            invalidate_mission_and_following("mission_1")
         st.session_state["m1_checked_signature"] = current_signature
         st.session_state["m1_passed"] = True
         st.session_state["m1_result"] = component_state_without_recording(arm_result)
@@ -3115,8 +3239,6 @@ def render_mission_2(context: dict[str, Any]) -> None:
     checks_ready = prediction["complete"] and analysis["complete"]
     current_signature = result_signature(result)
     checked_signature = st.session_state.get("m2_checked_signature")
-    if checked_signature and checked_signature != current_signature:
-        invalidate_mission_and_following("mission_2")
 
     render_completion_checklist([
         ("Calibration prediction saved", prediction["complete"], "write the prediction"),
@@ -3128,6 +3250,8 @@ def render_mission_2(context: dict[str, Any]) -> None:
     st.write("**Goal**: run the odometry test sequence with max error under 3.0 inches.")
 
     if st.button("Check Mission 2", key="check_m2", type="primary", disabled=not checks_ready):
+        if checked_signature and checked_signature != current_signature:
+            invalidate_mission_and_following("mission_2")
         st.session_state["m2_checked_signature"] = current_signature
         if passed:
             st.session_state["m2_passed"] = True
@@ -3145,7 +3269,8 @@ def render_mission_2(context: dict[str, Any]) -> None:
         st.caption("Complete the prediction and analysis before running the mission check.")
 
     if st.session_state.get("m2_passed") is True:
-        st.success(f"Mission 2 passed. Max test error: {max_error:.2f} in.")
+        saved_result = st.session_state.get("m2_result", result)
+        st.success(f"Mission 2 passed. Saved max test error: {float(saved_result.get('maxError', max_error)):.2f} in.")
 
         identity = render_student_identity()
         explanations = render_mission_explanations("mission_2")
@@ -3153,10 +3278,10 @@ def render_mission_2(context: dict[str, Any]) -> None:
         explanations_complete = all(v.strip() for v in explanations.values())
 
         zip_data = {
-            "params": params,
+            "params": st.session_state.get("m2_params", params),
             "metrics": st.session_state.get("m2_metrics", {}),
-            "result": component_state_without_recording(result),
-            "csv_files": {"odometry_test_summary.csv": csv_for_odometry_activity(result)},
+            "result": component_state_without_recording(saved_result),
+            "csv_files": {"odometry_test_summary.csv": csv_for_odometry_activity(saved_result)},
             "figures": {},
             "activity_gifs": activity_gifs,
         }
@@ -3631,8 +3756,6 @@ def render_mission_3(context: dict[str, Any]) -> None:
     }
     state_signature = result_signature(signature_state)
     checked_signature = st.session_state.get("m3_checked_signature")
-    if checked_signature and checked_signature != state_signature:
-        invalidate_mission_and_following("mission_3")
 
     drove = bool(latest_component_state.get("drove"))
     run_passed, validation_message = validate_mission_3_result(latest_component_state)
@@ -3688,6 +3811,8 @@ def render_mission_3(context: dict[str, Any]) -> None:
         type="primary",
         disabled=not checks_ready or not drove,
     ):
+        if checked_signature and checked_signature != state_signature:
+            invalidate_mission_and_following("mission_3")
         st.session_state["m3_checked_signature"] = state_signature
         st.session_state["m3_passed"] = run_passed
         if run_passed:
@@ -3777,7 +3902,10 @@ def render_export_page() -> None:
         "5. Is there anything else you would like to share about your experience with the activity?"
     )
     reflection_key = checkin_key("final_reflection", "note")
+    if reflection_key not in st.session_state:
+        st.session_state[reflection_key] = st.session_state.get("_lab4_checkins", {}).get("final_reflection", "")
     reflection_text = st.text_area("Your reflection", key=reflection_key, height=220)
+    record_checkin("final_reflection")
     reflection_words = len(reflection_text.split())
     st.caption(f"{reflection_words}/300 words")
     if reflection_words == 0:
@@ -3841,6 +3969,9 @@ def render_export_page() -> None:
 
     # Student info
     st.subheader("Student info")
+    for field, state_key in (("name", "export_student_name"), ("student_id", "export_student_id"), ("section", "export_student_section")):
+        if state_key not in st.session_state:
+            st.session_state[state_key] = st.session_state.get("_lab4_identity", {}).get(field, "")
     name = st.text_input("Name", key="export_student_name")
     student_id = st.text_input("Student ID or email", key="export_student_id")
     section = st.text_input("Section", key="export_student_section")
@@ -3849,6 +3980,8 @@ def render_export_page() -> None:
         "student_id": student_id.strip(),
         "section": section.strip(),
     }
+    for field, value in identity.items():
+        record_identity(field, value)
 
     mission_validation = {
         "mission_1": validate_mission_1_result(st.session_state.get("m1_result", {})),
@@ -3884,6 +4017,16 @@ def render_export_page() -> None:
         hide_index=True,
         width="stretch",
     )
+    missing_checkins = [key for key in required_checkins if not str(all_checkins.get(key, "")).strip()]
+    if missing_checkins:
+        st.info("Missing written responses: " + ", ".join(key.replace("_", " ") for key in missing_checkins) + ". Use Review saved work in the sidebar to return to those pages.")
+    missing_explanations = [
+        f"{mission_id.replace('_', ' ')} — {label.replace('_', ' ')}"
+        for mission_id, answers in all_explanations.items()
+        for label, value in answers.items() if not str(value).strip()
+    ]
+    if missing_explanations:
+        st.info("Missing mission explanations: " + ", ".join(missing_explanations) + ".")
     all_answers_ready = all(ready for _, ready in requirements)
 
     if st.button(
@@ -3994,7 +4137,25 @@ def run_streamlit_app() -> None:
     scroll_to_top_if_requested()
 
     st.sidebar.caption("Local-only lab. Do not use Streamlit Cloud as submission storage.")
+    st.sidebar.caption("Lab 4 autosave update: responses are retained across page changes. Streamlit's optional email prompt is not part of this course.")
     render_instructor_controls()
+    if len(set(st.session_state.get("mission_progress", [])) & set(MISSION_ORDER)) == len(MISSION_ORDER):
+        with st.sidebar.expander("Review saved work", expanded=stage == "export"):
+            for label, review_stage in (
+                ("Background", "background"),
+                ("PID playground", "pid_playground"),
+                ("Odometry background", "odom_background"),
+            ):
+                if st.button(label, key=f"review_{review_stage}"):
+                    st.session_state.pop("mission_override", None)
+                    set_stage(review_stage)
+            for index, mission_id in enumerate(MISSION_ORDER, start=1):
+                if st.button(f"Mission {index}", key=f"review_{mission_id}"):
+                    st.session_state["mission_override"] = mission_id
+                    set_stage("lab")
+            if st.button("Final submission", key="review_export"):
+                st.session_state.pop("mission_override", None)
+                set_stage("export")
     if st.session_state.get("_recovery_notice"):
         st.sidebar.success(st.session_state["_recovery_notice"])
     if st.session_state.get("_recovery_error"):

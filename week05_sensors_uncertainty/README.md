@@ -20,6 +20,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\run_lab.ps1
 
 The launcher creates a local virtual environment, installs pinned dependencies, checks the environment, and starts the guide. Leave the terminal running; open the local URL it displays. Do not use `sudo`. If Linux cannot create a virtual environment, install the distribution's Python venv package first.
 
+The interpreter inside `week05_sensors_uncertainty/.venv` must be Python 3.12 or newer. A newer `python --version` outside that environment does not upgrade an existing `.venv`. If the launcher reports an older environment, copy `student_submission`, rename only this lab's `.venv`, and rerun the launcher. Never remove `student_submission`. Streamlit's optional first-run email prompt is not part of the course.
+
 Alternatively, create and activate a Python virtual environment yourself, install `requirements.txt`, then run:
 
 ```bash
@@ -42,6 +44,8 @@ The delay measure requires three consecutive acceptable samples; available held 
 Answers, settings, experiment histories, selected configuration, predictions, and location save locally. The Course ID determines repeatable data and locks once work begins. Save predictions before testing and explicitly check/save each mission; the guide does not automatically hide its results. Local autosave is not a remote backup.
 
 An unreadable primary autosave recovers the previous valid backup where possible. If both saves are unreadable, the guide stops without replacing them. Keep the folder intact and contact the instructor. Earlier-version experiments are archived and downloadable; answers are retained, but the revised requirements need new experiments and checks. Changing an answer or relevant policy setting invalidates affected completion; other missions are retained. Changed evidence requires a fresh export.
+
+Page changes save before rerunning, and only visible-page widgets can update saved written answers. If a nonblank answer is cleared, autosave also retains a `responses.recovery.*.json` copy of the earlier responses. To update the course repository, first copy both Lab 4 and Lab 5 submission folders, inspect `git status --short`, and commit your own work. Stop on merge conflicts rather than resetting or overwriting submission files.
 
 ## Submit your own work
 

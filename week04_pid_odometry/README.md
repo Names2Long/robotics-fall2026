@@ -26,6 +26,8 @@ bash week04_pid_odometry/run_lab.sh
 
 Open the URL printed by Streamlit, normally <http://localhost:8501>.
 
+The launcher requires Python 3.12 or newer inside **this lab's** `.venv`; `python --version` outside the environment does not describe the interpreter the lab uses. It stops before package installation if an existing environment is too old. Copy `student_submission` first, then rename only `week04_pid_odometry/.venv` and rerun the launcher. Do not rename or delete `student_submission`. Streamlit's optional first-run email prompt is not a course requirement.
+
 The first page of the guide includes an environment check. Do not begin the tutorial until every check passes.
 
 ## Manual setup fallback
@@ -49,6 +51,8 @@ week04_pid_odometry/student_submission/
 ```
 
 If the browser, Streamlit, or the computer closes, start the lab again with the same launcher. Compatible saved work is restored automatically, and the sidebar reports what was recovered.
+
+Written answers are retained separately from the visible page widgets. Autosave keeps previous valid response and mission-progress snapshots (`autosave/responses.bak` and `autosave/progress.bak`) and archives a recovery copy if an answer is removed. If a saved file cannot be read and no valid backup exists, the app refuses to overwrite it. Preserve the whole folder and ask for help; do not reset the repository to try to recover it. After all missions pass, **Review saved work** in the sidebar lets you revisit tutorial pages and any mission without starting again. The final readiness page names missing written responses.
 
 Changing a controller, calibration, route, or other relevant result after a mission check invalidates that check. Run the mission check again before submitting.
 
@@ -77,9 +81,9 @@ git push
 
 Submit the URL of that individual Git commit. Do not submit only a screenshot or a link to the repository homepage.
 
-## Updating before beginning
+## Updating without losing work
 
-Follow the repository update procedure in [`ROS_DOCKER_SETUP.md`](../ROS_DOCKER_SETUP.md), even though this particular lab does not use ROS or Docker. Always commit existing work before merging course updates.
+Before fetching course changes, stop the lab and copy both Lab 4 and Lab 5 `student_submission` folders somewhere outside the repository. Run `git status --short`, then commit your own work in your personal fork. Follow the repository update procedure in [`ROS_DOCKER_SETUP.md`](../ROS_DOCKER_SETUP.md). If Git reports a conflict, stop and ask for help; do not use `git reset --hard` or overwrite a submission folder. After updating, restart the lab and verify that the recovered answers and mission evidence appear before editing anything.
 
 ## Instructor verification
 

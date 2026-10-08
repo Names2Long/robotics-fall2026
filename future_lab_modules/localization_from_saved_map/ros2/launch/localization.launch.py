@@ -7,7 +7,7 @@ from launch_ros.actions import Node, SetRemap
 from launch_ros.substitutions import FindPackageShare
 def generate_launch_description():
     map_file = LaunchConfiguration("map"); degraded = LaunchConfiguration("degraded")
-    gazebo = IncludeLaunchDescription(PythonLaunchDescriptionSource([FindPackageShare("turtlebot3_gazebo"), "/launch/turtlebot3_world.launch.py"]))
+    gazebo = IncludeLaunchDescription(PythonLaunchDescriptionSource([FindPackageShare("turtlebot3_gazebo"), "/launch/turtlebot3_house.launch.py"]))
     def navigation(): return IncludeLaunchDescription(PythonLaunchDescriptionSource([FindPackageShare("turtlebot3_navigation2"), "/launch/navigation2.launch.py"]), launch_arguments={"map": map_file, "use_sim_time": "true"}.items())
     degraded_group = GroupAction(condition=IfCondition(PythonExpression(["'", degraded, "' == 'degraded'"])), actions=[SetRemap(src="/scan", dst="/scan_degraded"), navigation()])
     normal_group = GroupAction(condition=IfCondition(PythonExpression(["'", degraded, "' != 'degraded'"])), actions=[navigation()])

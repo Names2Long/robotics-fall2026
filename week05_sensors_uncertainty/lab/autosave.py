@@ -76,6 +76,10 @@ def save(st):
             if {k:v for k,v in previous_data.items() if k!='updated_at'}=={k:v for k,v in payload.items() if k!='updated_at'} and (submission_root()/'student.json').is_file() and path.with_suffix('.md').is_file():
                 return path
             _atomic(path.with_suffix('.bak'),previous.decode('utf-8'))
+            removed={key for key,value in previous_data['responses'].items() if str(value).strip() and not str(payload.get('responses',{}).get(key,'')).strip()}
+            if removed:
+                archive=path.with_name('responses.recovery.'+uuid.uuid4().hex+'.json')
+                _atomic(archive,previous.decode('utf-8'))
         except (ValueError,TypeError):
             archive=path.with_name('responses.unreadable.'+uuid.uuid4().hex+'.json')
             path.replace(archive)

@@ -1,8 +1,14 @@
 from __future__ import annotations
-import argparse, json
+import argparse, json, math
 from datetime import datetime, timezone
 from pathlib import Path
+import sys
+
+# Direct execution adds scripts/ to sys.path, not the lab root that contains
+# analysis/. Keep the documented python3 scripts/analyze_map.py command usable.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from analysis.map_metrics import analyze_pixels, quality_score, read_pgm
+from lab_config import WORLD_ID
 
 def parse_map_metadata(path: Path) -> dict:
     metadata = {}
@@ -17,10 +23,12 @@ def main():
     parser = argparse.ArgumentParser(description="Analyze a Nav2 map pair")
     parser.add_argument("--yaml", required=True, type=Path); parser.add_argument("--strategy", required=True)
     parser.add_argument("--duration-min", required=True, type=float); parser.add_argument("--output", required=True, type=Path); args = parser.parse_args()
+    if not math.isfinite(args.duration_min) or args.duration_min <= 0:
+        parser.error("--duration-min must be the positive elapsed mapping time in minutes")
     metadata = parse_map_metadata(args.yaml); image = Path(metadata["image"])
     if not image.is_absolute(): image = args.yaml.parent / image
     width, height, maximum, pixels = read_pgm(image.resolve()); metrics = analyze_pixels(width, height, maximum, pixels, float(metadata["resolution"]))
-    payload = {"schema_version": 1, "captured_at": datetime.now(timezone.utc).isoformat(), "strategy": args.strategy, "duration_minutes": args.duration_min, "map_yaml": args.yaml.name, "map_image": image.name, "metrics": metrics, "quality_score": quality_score(metrics)}
+    payload = {"schema_version": 1, "captured_at": datetime.now(timezone.utc).isoformat(), "world_id": WORLD_ID, "strategy": args.strategy, "duration_minutes": args.duration_min, "map_yaml": args.yaml.name, "map_image": image.name, "metrics": metrics, "quality_score": quality_score(metrics)}
     args.output.parent.mkdir(parents=True, exist_ok=True); args.output.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     print(json.dumps(payload, indent=2))
 if __name__ == "__main__": main()

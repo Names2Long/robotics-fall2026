@@ -12,7 +12,7 @@ Weeks 1, 3, 6, 8, 9, and 11 reuse one cross-platform Docker environment. Student
 - [Week 3 overview](week03_motion_frames_ai/OVERVIEW.md) — individual ROS 2 lab for motion prediction, TF reasoning, and verified AI-assisted development.
 - [Week 4 overview](week04_pid_odometry/OVERVIEW.md) — individual, self-contained lab for PID control and odometry.
 - [Week 5 overview](week05_sensors_uncertainty/OVERVIEW.md) — individual, self-contained lab for sensor characterization, filtering, fusion, and decisions under uncertainty.
-- [Week 6 overview](week06_slam_localization/OVERVIEW.md) — individual ROS 2 lab for mapping, exploration-strategy comparison, and localization under difficult conditions.
+- [Week 6 overview](week06_slam_localization/OVERVIEW.md) — individual ROS 2 lab for mapping and exploration-strategy comparison.
 - [Week 8 overview](week08_vision_perception/OVERVIEW.md) — individual ROS 2 lab comparing classical and learned vision and connecting perception to bounded behavior.
 - [Week 9 overview](week09_planning_navigation/OVERVIEW.md) — individual ROS 2 lab for path inspection, repeatable Nav2 trials, and a human-aware navigation redesign.
 - [Week 10 overview](week10_foundation_models/OVERVIEW.md) — individual, self-contained lab for evaluating foundation-model plans and visual interpretations through a safety verification layer.

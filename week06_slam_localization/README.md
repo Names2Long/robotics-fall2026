@@ -1,46 +1,23 @@
-# Week 6 — SLAM and Localization
+# Week 6: SLAM and Mapping
 
-An individual ROS 2 and Streamlit lab in which students operate established SLAM and localization systems, evaluate their output, and reason about when a robot can justifiably claim to know where it is. Students do **not** implement SLAM from scratch.
+This individual lab uses ROS 2 Jazzy, the TurtleBot3 House simulation, SLAM Toolbox, RViz, and a Streamlit guide. Students investigate how motion and LiDAR evidence support or limit an occupancy-grid map. The AMCL localization mission has been moved to [a future-lab module](../future_lab_modules/localization_from_saved_map/README.md).
 
-## Learning sequence
+## Student path
 
-1. **Concepts:** connect LiDAR, odometry, TF, occupancy grids, loop closure, pose distributions, and covariance.
-2. **Preflight:** verify a supplied ROS 2 Jazzy environment.
-3. **Mission 1 — Build a map:** teleoperate through an unknown simulated environment, save the map, and analyze coverage and structural quality.
-4. **Mission 2 — Compare strategies:** remap the same world using a different exploration strategy, then compare coverage, fragmentation, clipping, and loop-closure evidence.
-5. **Mission 3 — Localize:** run AMCL against the saved map with a good initial pose, an incorrect pose, an ambiguous location, and a degraded scan.
-6. **Final synthesis:** answer what it means for the robot to “know where it is” using evidence from the runs.
+1. Guided Tutorial 1: encoders, dead reckoning, and accumulated error.
+2. Guided Tutorial 2: topological versus metric maps and occupancy-grid updates.
+3. ROS preflight and Guided Tutorial 3: identify measurements, estimates, and accumulated map evidence in RViz.
+4. Mission 1: predict a route, map, revisit, save, and interpret.
+5. Mission 2: predict and compare a controlled second strategy.
+6. Write the technical synthesis and separate individual reflection. Prepare and inspect the submission.
 
-## Shared ROS environment
+The guide marks original predictions before results. A prediction can be wrong and still be valuable evidence of learning. Do not edit PGM maps or evidence JSON by hand.
 
-Use the course container configured once in Week 1. It already contains ROS 2 Jazzy, TurtleBot3 simulation/teleoperation, SLAM Toolbox, Navigation2, map server, AMCL, Gazebo, RViz, and Streamlit on Windows, macOS, and Linux. See [`../ROS_DOCKER_SETUP.md`](../ROS_DOCKER_SETUP.md). Native Ubuntu 24.04 remains an optional performance fallback.
+Lab 6 uses TurtleBot3 House for both mapping runs. Maps made in the earlier TurtleBot3 World do not match the House layout. Keep those older files as backups, then create and analyze new House maps before comparing runs.
 
-The package and command choices follow the current [TurtleBot3 simulation and SLAM workflow](https://emanual.robotis.com/docs/en/platform/turtlebot3/slam_simulation/) and [Nav2 map-server interface](https://docs.ros.org/en/jazzy/p/nav2_map_server/).
+## Start the shared course environment
 
-## Instructor/native fallback setup
-
-Install the ROS dependencies, clone/build TurtleBot3 Jazzy simulation if it is not distributed on the course image, then build the supplied package:
-
-```bash
-sudo apt install ros-jazzy-navigation2 ros-jazzy-nav2-bringup \
-  ros-jazzy-slam-toolbox python3-colcon-common-extensions
-cd week06_slam_localization/ros2_ws
-source /opt/ros/jazzy/setup.bash
-colcon build --symlink-install
-cd ..
-python3 -m pip install --user -r requirements.txt
-chmod +x scripts/*.sh
-```
-
-
-## Required final reflection
-
-After the technical work, complete the individual [final reflection](../FINAL_REFLECTION.md). Respond to any or all of the five prompts in 1–300 words. A blank response or a response over 300 words cannot finalize the submission. The app saves the response as `student_submission/final_reflection.md`, separate from technical syntheses and mission explanations.
-
-
-The official TurtleBot3 instructions describe the additional Jazzy source packages required when TurtleBot3 is not preinstalled: [TurtleBot3 Quick Start](https://emanual.robotis.com/docs/en/platform/turtlebot3/quick-start/).
-
-## Run in the shared course container
+From the repository root, use the one-time setup described in [ROS_DOCKER_SETUP.md](../ROS_DOCKER_SETUP.md). Then start Lab 6:
 
 Windows:
 
@@ -54,55 +31,39 @@ macOS/Linux:
 ./scripts/ros_course.sh lab week06_slam_localization
 ```
 
-Then, in the browser desktop terminal:
+The guide opens at `http://localhost:8501`. The course launcher sets `ROS_DOMAIN_ID=26` and opens the lab directory. A new desktop terminal may not inherit that setting, so the Lab 6 launch scripts set it explicitly. On the preflight page, click **Run preflight now**. The guide runs `bash scripts/course_preflight.sh` in the shared container and ignores results from earlier launches. Guided Tutorial 3 starts mapping and RViz. Keep both running as you enter Mission 1. Do not launch a second copy. Stop the robot before switching terminals. Never run two Gazebo worlds in the same domain.
+
+New virtual desktop terminals may open at `/workspace`, not the Lab 6 folder. Each command block in the guide begins with `cd /workspace/week06_slam_localization` so scripts and runtime files resolve correctly. The guide includes a delayed desktop capture command for RViz screenshots. Switch to RViz during the delay, then inspect the saved image before checking the mission.
+
+If the simulator or recorder fails, preserve `student_submission/` and rerun only the missing condition. The guide reads files from `runtime/` automatically and can reopen previously saved submission artifacts. No file uploads are needed. Save RViz screenshots at the paths shown in the guide. In Mission 2, stop the first mapping launch, run `bash scripts/reset_mapping.sh`, then start a fresh world with the robot at its original pose and an empty SLAM map. The reset closes leftover Gazebo processes but does not change saved map files. Time both routes from first movement to a usable map and compare time alongside coverage and visible structure.
+
+## What the numbers mean
+
+Known fraction, speckles, border contact, and the composite map score help compare maps but do not establish a true geometric map error. They are discussion evidence, not passing thresholds. Use RViz and the simulated robot to judge visible structure and label uncertainty honestly.
+
+## Submission and recovery
+
+Prepare the submission in the guide. Its readiness table checks current mission artifacts, writing, and identity. The manifest records file hashes. Download the ZIP as a backup. In your personal fork, commit the complete `student_submission/` directory from the repository root:
 
 ```bash
-bash scripts/course_preflight.sh
+git status
+git add week06_slam_localization/student_submission
+git commit -m "Submit Lab 6"
+git push origin main
 ```
 
-The guide is at `http://localhost:8501`. The launcher selects `ROS_DOMAIN_ID=26`. The Streamlit guide provides the exact commands for each mission. `scripts/launch_mapping.sh` starts the simulation and asynchronous SLAM. `scripts/launch_localization.sh` starts normal or degraded-scan localization. The supplied map analyzer and localization recorder produce the JSON evidence consumed by the guide.
+Open the commit on GitHub, verify that it contains your submission files, and submit its URL through the course submission system. The ZIP is a backup, not an automatic upload.
 
-## Safety and experimental controls
-
-- Work only in simulation for this lab.
-- Stop the robot before switching terminal focus.
-- Do not run two Gazebo worlds or two localization systems in the same ROS domain.
-- Restart the simulator and SLAM/localization between controlled trials.
-- Use approximately equal mapping durations when comparing strategies.
-- Never edit the saved PGM image or evidence JSON by hand.
-
-## Submission
-
-This is an **individual lab**. Submit the complete `student_submission/` directory and the individual Git commit. The folder contains:
-
-- student identity and autosaved responses;
-- two map YAML/image pairs, map-analysis JSON files, and RViz screenshots;
-- four localization trial JSON files and screenshots from at least two conditions;
-- mission explanations and quantitative evidence; and
-- `manifest.json`.
-
-```bash
-git add student_submission
-git commit -m "Submit Week 6 SLAM and localization lab"
-git push
-```
+If the guide reports an unreadable autosave, do not reset or delete files. Copy `student_submission/` somewhere safe and contact the instructor. A prior valid autosave is recovered automatically when possible, with the unreadable copy preserved.
 
 ## Maintainer verification
 
-The ROS-independent components can be tested on any supported Python machine:
+ROS-independent tests:
 
 ```bash
 python3 app.py --smoke-test
 python3 -m unittest discover -s tests -v
-python3 -m compileall -q .
+python3 -m compileall -q app.py analysis lab missions pages ros2_ws/src/course_slam_tools/course_slam_tools
 ```
 
-Full integration requires ROS 2 Jazzy:
-
-```bash
-cd ros2_ws
-source /opt/ros/jazzy/setup.bash
-colcon build --symlink-install
-colcon test
-colcon test-result --verbose
-```
+Full release verification must run in the course ROS 2 container. Build `ros2_ws`, run preflight, produce both maps, verify the YAML/PGM pairs and previews, restart the browser, and prepare the final ZIP. Confirm that Mission 2 leads directly to the final page and that no localization trial is required for submission.

@@ -50,6 +50,7 @@ def run_streamlit_app():
     if st.session_state.get('recovery_blocked'):
         st.error(st.session_state['recovery_note']);st.stop()
     if st.session_state.get('recovery_note'): st.sidebar.warning(st.session_state['recovery_note'])
+    st.sidebar.caption('Lab 5 persistence update: 2026-10-05. Streamlit email signup is optional and not part of the course.')
     if st.session_state.get('legacy_evidence'):
         import json
         from lab.autosave import json_ready

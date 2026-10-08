@@ -4,7 +4,7 @@ Set this environment up **once** and reuse it for every ROS-based lab:
 
 - Week 1: ROS foundations
 - Week 3: motion, frames, and AI-assisted development
-- Week 6: SLAM and localization
+- Week 6: SLAM and mapping
 - Week 8: computer vision and learned perception
 - Week 9: planning and navigation
 - Week 11: HRI evaluation

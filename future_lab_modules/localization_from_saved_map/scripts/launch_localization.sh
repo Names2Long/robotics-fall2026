@@ -5,5 +5,6 @@ LAB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source /opt/ros/jazzy/setup.bash
 source "$LAB_ROOT/ros2_ws/install/setup.bash"
 set -u
+export ROS_DOMAIN_ID=26
 export TURTLEBOT3_MODEL=burger
 ros2 launch course_slam_tools localization.launch.py map:="$1" degraded:="${2:-normal}"

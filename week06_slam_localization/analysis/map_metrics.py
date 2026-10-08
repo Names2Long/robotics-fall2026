@@ -4,8 +4,8 @@ from collections import deque
 from pathlib import Path
 
 
-def read_pgm(path: Path) -> tuple[int, int, int, list[int]]:
-    data = path.read_bytes(); index = 0
+def read_pgm_bytes(data: bytes) -> tuple[int, int, int, list[int]]:
+    index = 0
     def token():
         nonlocal index
         while index < len(data):
@@ -19,12 +19,19 @@ def read_pgm(path: Path) -> tuple[int, int, int, list[int]]:
     magic = token(); width = int(token()); height = int(token()); maximum = int(token())
     if magic == b"P2": pixels = [int(token()) for _ in range(width * height)]
     elif magic == b"P5":
-        while index < len(data) and data[index:index + 1].isspace(): index += 1
+        # The raster starts after exactly one header delimiter. Additional bytes,
+        # even whitespace-valued bytes, may be actual pixel values.
+        if data[index:index + 2] == b"\r\n": index += 2
+        elif index < len(data) and data[index:index + 1].isspace(): index += 1
         raw = data[index:index + width * height * (2 if maximum > 255 else 1)]
         pixels = list(raw) if maximum <= 255 else [int.from_bytes(raw[i:i + 2], "big") for i in range(0, len(raw), 2)]
     else: raise ValueError("Only P2 and P5 PGM maps are supported")
     if len(pixels) != width * height: raise ValueError("PGM pixel count does not match dimensions")
     return width, height, maximum, pixels
+
+
+def read_pgm(path: Path) -> tuple[int, int, int, list[int]]:
+    return read_pgm_bytes(path.read_bytes())
 
 
 def _components(mask: list[bool], width: int, height: int) -> list[int]:

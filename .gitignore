@@ -1,6 +1,8 @@
 __pycache__/
 *.py[cod]
 **/.venv/
+.venv/
+.DS_Store
 
 # ROS 2 / colcon generated workspaces
 **/ros2_ws/build/
@@ -9,3 +11,8 @@ __pycache__/
 
 # Lab-generated runtime artifacts
 **/runtime/
+
+# Lab 6 local recovery copies stay on the student's machine, not in submissions.
+week06_slam_localization/student_submission/autosave/*.bak
+week06_slam_localization/student_submission/autosave/*recovery*
+week06_slam_localization/student_submission/autosave/*unreadable*
