@@ -1,0 +1,35 @@
+{
+  "files": {
+    "autosave/responses.json": "68d423cd8c94eaa722adf680b9157009b3cbb89c11c1f145995a16bceaf4189f",
+    "autosave/responses.md": "76d1ebb44568e796d15e8f07386cc216e3e05a04c51d866de535bef457cb74a2",
+    "final_reflection.md": "4d290857221376063f1789da8becb02a1451f90555a286c0edfc312e92a64c25",
+    "final_synthesis.md": "46701a91537a63fe61609167c3bf6c35e7378ca429c3cb3e187f886da92e2d03",
+    "mission_1/analysis.json": "5dca7db1cea167602837e36334d9282bc150529b048d6662edc30dbf0ce2a190",
+    "mission_1/evidence.json": "dda32eb5c8febafe2a975d3ab47a1edd7cfe02a53c29a28d1ae665978a84f908",
+    "mission_1/explanation.md": "2c7ae7e8866c243f784d20502f295b091add1c5ffca1c5cc876804e7aceb0377",
+    "mission_1/map.pgm": "416359c47a0da9ae2abc25e87b7443f6fd54f5e7e1f448d34474be62755694aa",
+    "mission_1/map.yaml": "8ffbec9e944f5bc5157bd241a90b2fb9bba7ebad03170b13ee9bbedbcc446501",
+    "mission_1/rviz_screenshot.png": "c7aeaf78f5f9eab4118255937c3a4afdabadd0f2ed05df503d2357099f6a268d",
+    "mission_1/submission.json": "783153947bf982414c7a3c1b64b6a0e555ed9bda10ddc8cd737792e233aa83c5",
+    "mission_2/analysis.json": "2d6ac2aaa5c5671e8c1c1455b9e2a08d015b4e32f500265bba07136d2c4ee4f9",
+    "mission_2/evidence.json": "e2b2c8d37093cac4479be58928e006e9f4d3ddddef675aeb873cf39f9d06e40a",
+    "mission_2/explanation.md": "cb1a0b7c75474074f4bafda89f451e898da702f2974f448014958032d6362b7b",
+    "mission_2/map.pgm": "201e4b32be0f6672e308aeec0147b974796d749810dd03f5de6a5949fec39453",
+    "mission_2/map.yaml": "97a9ca11f683a1d251ced5d9df4e4044b9911e6380c0a6f36580cb4d845f547f",
+    "mission_2/rviz_screenshot.png": "5502821ed534f154b160d2aae9ab8208689f39837567c54bd3bca963b1828525",
+    "mission_2/submission.json": "6b3de6a0aa8304bb5b01145ea862e854870c2ae7fccdae11d8e84ca58266cfb2",
+    "student.json": "2d4859add558b93e0aa6dd0b33a8d1874306ed6907a2fdd56506a4ddf54878bb"
+  },
+  "generated_at": "2026-10-11T21:12:55.767927+00:00",
+  "lab_id": "week06_slam_localization",
+  "mission_signatures": {
+    "mission_1": "0429126eeeec8648",
+    "mission_2": "6028df80c38d60d3"
+  },
+  "response_signature": "e913913070385140",
+  "schema_version": 2,
+  "student": {
+    "email": "ASIL.CHOWDHURY41@stu-mail.hunter.cuny.edu",
+    "name": "Ishraq Chowdhury"
+  }
+}
