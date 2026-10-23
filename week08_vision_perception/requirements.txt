@@ -1,5 +1,5 @@
-streamlit>=1.58
-numpy>=1.26
-opencv-python>=4.9
-pandas>=2.0
-matplotlib>=3.8
+streamlit>=1.58,<2
+numpy>=1.26,<3
+opencv-python-headless>=4.9,<5
+pandas>=2.0,<4
+pillow>=10,<14

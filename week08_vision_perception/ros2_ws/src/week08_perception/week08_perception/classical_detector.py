@@ -1,21 +1,66 @@
-from __future__ import annotations
-import time, cv2, numpy as np, rclpy
-from cv_bridge import CvBridge
+from dataclasses import fields
+import time
+import json
+import rclpy
+from rclpy.signals import SignalHandlerOptions
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
+from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 from week08_interfaces.msg import TargetObservation
+from perception.classical import Settings, process
+
+
 class ClassicalDetector(Node):
     def __init__(self):
-        super().__init__("classical_detector"); defaults=(("h_low",40),("s_low",70),("v_low",40),("h_high",90),("s_high",255),("v_high",255),("min_area",300.0),("kernel",5))
-        for name,value in defaults:self.declare_parameter(name,value)
-        self.declare_parameter("camera_topic","/camera/image_raw"); self.bridge=CvBridge(); self.obs=self.create_publisher(TargetObservation,"/perception/target",10); self.mask=self.create_publisher(Image,"/perception/mask",10); self.annotated=self.create_publisher(Image,"/perception/annotated",10); self.create_subscription(Image,str(self.get_parameter("camera_topic").value),self.on_image,qos_profile_sensor_data)
-    def on_image(self,msg):
-        started=time.perf_counter(); image=self.bridge.imgmsg_to_cv2(msg,"bgr8"); hsv=cv2.cvtColor(image,cv2.COLOR_BGR2HSV); lower=np.array([self.get_parameter(x).value for x in ("h_low","s_low","v_low")]); upper=np.array([self.get_parameter(x).value for x in ("h_high","s_high","v_high")]); mask=cv2.inRange(hsv,lower,upper); k=max(1,int(self.get_parameter("kernel").value)); kernel=np.ones((k,k),np.uint8); mask=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernel); mask=cv2.morphologyEx(mask,cv2.MORPH_CLOSE,kernel); contours,_=cv2.findContours(mask,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE); contour=max(contours,key=cv2.contourArea) if contours else None; out=TargetObservation(); out.header=msg.header; out.label="course_target"; annotated=image.copy(); minimum=float(self.get_parameter("min_area").value)
-        if contour is not None and cv2.contourArea(contour)>=minimum:
-            x,y,w,h=cv2.boundingRect(contour); area=cv2.contourArea(contour); out.detected=True; out.confidence=float(min(1.,area/max(minimum*4,1))); out.center_offset=float(((x+w/2)/(image.shape[1]/2))-1); out.area_fraction=float(area/(image.shape[0]*image.shape[1])); out.bbox_x=x; out.bbox_y=y; out.bbox_width=w; out.bbox_height=h; cv2.rectangle(annotated,(x,y),(x+w,y+h),(0,255,0),2)
-        out.latency_ms=float((time.perf_counter()-started)*1000); self.obs.publish(out); mask_msg=self.bridge.cv2_to_imgmsg(mask,"mono8"); mask_msg.header=msg.header; self.mask.publish(mask_msg); ann_msg=self.bridge.cv2_to_imgmsg(annotated,"bgr8"); ann_msg.header=msg.header; self.annotated.publish(ann_msg)
+        super().__init__("classical_detector")
+        for field in fields(Settings): self.declare_parameter(field.name, field.default)
+        self.declare_parameter("camera_topic", "/camera/image_raw")
+        self.declare_parameter("implementation_json", "{}")
+        self.bridge = CvBridge()
+        self.observations = self.create_publisher(TargetObservation, "/perception/target", 10)
+        self.images = {name: self.create_publisher(Image, "/perception/"+name, 10) for name in ("raw_mask", "mask", "contours", "annotated")}
+        self.create_subscription(Image, self.get_parameter("camera_topic").value, self.on_image, qos_profile_sensor_data)
+        self.get_logger().info("Classical detector ready for images")
+
+    def on_image(self, message):
+        started = time.perf_counter()
+        image = self.bridge.imgmsg_to_cv2(message, "bgr8")
+        try:
+            settings = Settings(**{f.name: self.get_parameter(f.name).value for f in fields(Settings)})
+            implementation = json.loads(self.get_parameter("implementation_json").value) or None
+            if implementation:
+                from perception.student_code import check_implementation
+                check_implementation(implementation)
+            result = process(image, settings, implementation)
+        except ValueError as error:
+            self.get_logger().error(str(error))
+            return
+        out = TargetObservation()
+        out.header = message.header
+        out.label = "cup"
+        out.detected = result["detected"]
+        out.confidence = float(out.detected)  # Binary rule score, not a probability.
+        if result["bbox"]:
+            x, y, w, h = result["bbox"]
+            out.bbox_x, out.bbox_y, out.bbox_width, out.bbox_height = x, y, w, h
+            out.center_offset = float(2*(x+w/2)/image.shape[1]-1)
+            out.area_fraction = float(w*h/(image.shape[0]*image.shape[1]))
+        out.latency_ms = (time.perf_counter()-started)*1000
+        self.observations.publish(out)
+        for name, publisher in self.images.items():
+            converted = self.bridge.cv2_to_imgmsg(result[name], "mono8" if result[name].ndim == 2 else "bgr8")
+            converted.header = message.header
+            publisher.publish(converted)
+
+
 def main():
-    rclpy.init(); node=ClassicalDetector()
-    try:rclpy.spin(node)
-    finally:node.destroy_node();rclpy.shutdown()
+    rclpy.init(signal_handler_options=SignalHandlerOptions.NO)
+    node = ClassicalDetector()
+    try:
+        while rclpy.ok(): rclpy.spin_once(node, timeout_sec=.1)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()

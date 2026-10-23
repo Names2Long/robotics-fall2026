@@ -1,0 +1,7 @@
+{
+  "source": "coffee.png",
+  "source_size": [600, 400],
+  "label": "cup",
+  "annotation": "Approximate manually traced visible cup silhouette including the handle and contents, excluding the saucer and spoon. Teaching reference, not benchmark-quality ground truth.",
+  "polygon": [[291,17],[333,21],[373,39],[397,67],[409,105],[406,140],[392,190],[381,220],[374,245],[344,270],[306,283],[263,286],[240,294],[224,308],[207,304],[195,292],[198,270],[209,244],[213,234],[201,215],[186,184],[177,150],[171,115],[176,81],[193,51],[220,30],[255,20]]
+}

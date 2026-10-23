@@ -10,7 +10,8 @@ class LabConfig:
 
 LAB = LabConfig(
     id="week08_vision_perception",
-    title="Week 8: Computer Vision and Learned Perception",
-    stages=("intro", "concepts", "preflight", "mission_1", "mission_2", "mission_3", "final"),
-    missions=("mission_1", "mission_2", "mission_3"),
+    title="Lab 7: Computer Vision and Learned Perception (Week 8)",
+    stages=("intro", "preflight", "concepts", "investigation", "pillar_search", "line_following", "final"),
+    # Evidence keys remain stable to preserve saved work from earlier revisions.
+    missions=("mission_1", "mission_2", "pillar_search", "line_following"),
 )

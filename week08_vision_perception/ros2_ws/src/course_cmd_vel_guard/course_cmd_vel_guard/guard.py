@@ -1,5 +1,6 @@
 import math, time
 import rclpy
+from rclpy.signals import SignalHandlerOptions
 from geometry_msgs.msg import Twist
 from rclpy.node import Node
 class Guard(Node):
@@ -13,6 +14,7 @@ class Guard(Node):
     def watchdog(self):
         if not self.stopped and time.monotonic()-self.last>float(self.get_parameter("timeout").value): self.stop()
 def main():
-    rclpy.init(); node=Guard()
+    rclpy.init(signal_handler_options=SignalHandlerOptions.NO); node=Guard()
     try: rclpy.spin(node)
+    except KeyboardInterrupt: pass
     finally: node.stop(); node.destroy_node(); rclpy.shutdown()
