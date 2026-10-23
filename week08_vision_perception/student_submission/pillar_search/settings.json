@@ -1,0 +1,18 @@
+{
+  "colors": "red,green,turquoise,blue",
+  "finish_fraction": 0.1,
+  "gain": 1.2,
+  "hold_seconds": 0.7,
+  "hue_high": 169,
+  "hue_low": 140,
+  "kind": "pillar_search",
+  "max_age": 0.7,
+  "min_fraction": 0.002,
+  "roi_bottom": 0.95,
+  "roi_top": 0.6,
+  "saturation_low": 90,
+  "search_speed": 0.35,
+  "speed": 0.16,
+  "tolerance": 0.1,
+  "value_low": 40
+}

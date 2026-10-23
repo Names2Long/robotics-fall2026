@@ -1,0 +1,7 @@
+# pillar_search
+
+## diagnosis
+In my attempt the robot successfully centered the blue pillar. The camera image shows the blue pillar, and the white mask isolates its colored region. Initially, its centroid was left of center, producing negative image error. With the angular command equal to minus gain times error, this produced a positive turn command, turning the robot left. The final error approached zero, and the annotated image shows the yellow centroid close to the magenta center line. The robot then stopped turning, while forward speed remained zero throughout. This attempt used gain 1.2, tolerance 0.10 and hold time 0.70 seconds. Without a recorded comparison using different settings, I cannot determine whether a setting change improved or worsened performance.
+
+## evidence
+In my attempt, all four requested colors. Red, green, turquoise and blue completed the centering. None remained unfinished. The report records all four visited colors and an outcome of complete after 19.53 simulation seconds. The visible timeline begins with four WAIT_CAMERA decisions with zero commands, followed by SEARCH for red. The error plot shows four centering intervals approaching zero, with pauses in turning between them. The final camera image and mask support successful blue centering, with the centroid close to the image center. A centered region and stable hold only establish alignment with pixels matching the color rule. Another similarly colored object could pass the same rule, and horizontal image alignment provides no depth measurement or physical distance.

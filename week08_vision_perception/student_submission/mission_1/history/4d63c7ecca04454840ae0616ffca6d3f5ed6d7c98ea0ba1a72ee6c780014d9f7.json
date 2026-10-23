@@ -1,0 +1,684 @@
+{
+  "dataset": "8be293304a35b0eb82d85fc32fc3cca73436b63d75a55351bed4ae982ae65425",
+  "implementation": null,
+  "method": "classical",
+  "program": "import cv2\nimport numpy as np\n\n# The guide has loaded the selected photograph into image.\nworking = image.copy()\nworking = np.clip(working.astype(float) * 1.4 + -41, 0, 255).astype('uint8')\nworking = cv2.GaussianBlur(working, (7, 7), 0)\nhsv = cv2.cvtColor(working, cv2.COLOR_BGR2HSV)\n\nlower = np.array([0, 0, 69])\nupper = np.array([145, 174, 255])\nraw_mask = cv2.inRange(hsv, lower, upper)\n\nkernel = np.ones((7, 7), np.uint8)\nopened = cv2.morphologyEx(raw_mask, cv2.MORPH_OPEN, kernel)\n\nclean = cv2.morphologyEx(opened, cv2.MORPH_CLOSE, kernel)\n\ncontours, hierarchy = cv2.findContours(\n    clean, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)\nminimum_area = 3193\nminimum_circularity = 0.1\ncontour_image = image.copy()\ncv2.drawContours(contour_image, contours, -1, (255, 150, 0), 2)\nrows = []\neligible = []\nfor index, contour in enumerate(contours):\n    area = float(cv2.contourArea(contour))\n    perimeter = cv2.arcLength(contour, True)\n    circularity = 4 * np.pi * area / perimeter**2 if perimeter else 0\n    moments = cv2.moments(contour)\n    centroid = [moments['m10']/moments['m00'], moments['m01']/moments['m00']] if moments['m00'] else None\n    passes = area >= minimum_area and circularity >= minimum_circularity\n    rows.append(dict(candidate=index, area_px=area,\n                     circularity=float(circularity), centroid=centroid, eligible=passes))\n    x, y = contour[0, 0]\n    cv2.putText(contour_image, str(index), (x, max(y, 15)),\n                cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 80, 0), 1)\n    if passes:\n        eligible.append((area, index))\n\nannotated = image.copy()\nbox = None\nselected = None\nif eligible:\n    area, selected = max(eligible)\n    box = cv2.boundingRect(contours[selected])\n    x, y, width, height = box\n    cv2.rectangle(annotated, (x, y), (x + width, y + height), (0, 220, 0), 2)\n    center = (int(x + width / 2), int(y + height / 2))\n    cv2.circle(annotated, center, 5, (0, 0, 255), -1)\n    centroid = rows[selected]['centroid']\n    if centroid:\n        cv2.drawMarker(annotated, tuple(map(int, centroid)), (0, 255, 255), markerSize=12)\nimage_center_x = image.shape[1] // 2\ncv2.line(annotated, (image_center_x, 0),\n         (image_center_x, image.shape[0]), (255, 0, 255), 1)\ndetected = box is not None",
+  "rows": [
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "normal",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": true,
+      "image_id": "normal_1",
+      "latency_ms": 6.1396670007525245,
+      "raw_detections": [],
+      "reference_box": [
+        243.0,
+        0.0,
+        148.0,
+        108.0
+      ],
+      "selected_iou": 0.1040625
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "normal",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": true,
+      "image_id": "normal_2",
+      "latency_ms": 5.461666999508452,
+      "raw_detections": [],
+      "reference_box": [
+        251.0,
+        0.0,
+        148.0,
+        108.0
+      ],
+      "selected_iou": 0.1040625
+    },
+    {
+      "bbox": [
+        0,
+        14,
+        426,
+        306
+      ],
+      "condition": "dim",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": true,
+      "image_id": "dim_1",
+      "latency_ms": 4.885084000306961,
+      "raw_detections": [],
+      "reference_box": [
+        235,
+        0,
+        148,
+        108
+      ],
+      "selected_iou": 0.10505331198840125
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "dim",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": true,
+      "image_id": "dim_2",
+      "latency_ms": 4.9092919998656726,
+      "raw_detections": [],
+      "reference_box": [
+        235,
+        0,
+        148,
+        108
+      ],
+      "selected_iou": 0.1040625
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "glare",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": true,
+      "image_id": "glare_1",
+      "latency_ms": 4.934458000207087,
+      "raw_detections": [],
+      "reference_box": [
+        235,
+        0,
+        148,
+        108
+      ],
+      "selected_iou": 0.1040625
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "glare",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": true,
+      "image_id": "glare_2",
+      "latency_ms": 4.722792000393383,
+      "raw_detections": [],
+      "reference_box": [
+        235,
+        0,
+        148,
+        108
+      ],
+      "selected_iou": 0.1040625
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "far",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": true,
+      "image_id": "far_1",
+      "latency_ms": 3.5482920002323226,
+      "raw_detections": [],
+      "reference_box": [
+        238.0,
+        96.0,
+        59.20001220703125,
+        43.19999694824219
+      ],
+      "selected_iou": 0.01665000225702897
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "far",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": true,
+      "image_id": "far_2",
+      "latency_ms": 3.5794579998764675,
+      "raw_detections": [],
+      "reference_box": [
+        237.0,
+        64.0,
+        88.80001831054688,
+        64.80000305175781
+      ],
+      "selected_iou": 0.03746250948905981
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "occluded",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": true,
+      "image_id": "occluded_1",
+      "latency_ms": 4.071416999977373,
+      "raw_detections": [],
+      "reference_box": [
+        235,
+        0,
+        148,
+        108
+      ],
+      "selected_iou": 0.1040625
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "occluded",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": true,
+      "image_id": "occluded_2",
+      "latency_ms": 3.965124999922409,
+      "raw_detections": [],
+      "reference_box": [
+        235,
+        0,
+        148,
+        108
+      ],
+      "selected_iou": 0.1040625
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "rotated",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": true,
+      "image_id": "rotated_1",
+      "latency_ms": 3.9170419995571137,
+      "raw_detections": [],
+      "reference_box": [
+        201.8433837890625,
+        0.0,
+        167.22030639648438,
+        110.17588806152344
+      ],
+      "selected_iou": 0.11994561041115048
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "rotated",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": true,
+      "image_id": "rotated_2",
+      "latency_ms": 3.9713750002192683,
+      "raw_detections": [],
+      "reference_box": [
+        170.35440063476562,
+        0.0,
+        179.13229370117188,
+        114.52931213378906
+      ],
+      "selected_iou": 0.1335670467353066
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "cluttered",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": true,
+      "image_id": "cluttered_1",
+      "latency_ms": 4.244166999342269,
+      "raw_detections": [],
+      "reference_box": [
+        235,
+        0,
+        148,
+        108
+      ],
+      "selected_iou": 0.1040625
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "cluttered",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": true,
+      "image_id": "cluttered_2",
+      "latency_ms": 4.013290999864694,
+      "raw_detections": [],
+      "reference_box": [
+        235,
+        0,
+        148,
+        108
+      ],
+      "selected_iou": 0.1040625
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "distractor",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": false,
+      "image_id": "distractor_1",
+      "latency_ms": 3.50791599976219,
+      "raw_detections": [],
+      "reference_box": null,
+      "selected_iou": 0.0
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "distractor",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": false,
+      "image_id": "distractor_2",
+      "latency_ms": 3.457916999650479,
+      "raw_detections": [],
+      "reference_box": null,
+      "selected_iou": 0.0
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "blur",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": true,
+      "image_id": "blur_1",
+      "latency_ms": 3.912707999916165,
+      "raw_detections": [],
+      "reference_box": [
+        235,
+        0,
+        148,
+        108
+      ],
+      "selected_iou": 0.1040625
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "blur",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": true,
+      "image_id": "blur_2",
+      "latency_ms": 4.115084000659408,
+      "raw_detections": [],
+      "reference_box": [
+        235,
+        0,
+        148,
+        108
+      ],
+      "selected_iou": 0.1040625
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "background",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": true,
+      "image_id": "background_1",
+      "latency_ms": 3.5197079996578395,
+      "raw_detections": [],
+      "reference_box": [
+        235,
+        0,
+        148,
+        108
+      ],
+      "selected_iou": 0.1040625
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "background",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": true,
+      "image_id": "background_2",
+      "latency_ms": 4.204333000416227,
+      "raw_detections": [],
+      "reference_box": [
+        235,
+        0,
+        148,
+        108
+      ],
+      "selected_iou": 0.1040625
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "normal",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": false,
+      "image_id": "normal_absent",
+      "latency_ms": 3.304333000414772,
+      "raw_detections": [],
+      "reference_box": null,
+      "selected_iou": 0.0
+    },
+    {
+      "bbox": [
+        131,
+        71,
+        159,
+        169
+      ],
+      "condition": "dim",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": false,
+      "image_id": "dim_absent",
+      "latency_ms": 3.8048329997764085,
+      "raw_detections": [],
+      "reference_box": null,
+      "selected_iou": 0.0
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "glare",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": false,
+      "image_id": "glare_absent",
+      "latency_ms": 3.4286660002180724,
+      "raw_detections": [],
+      "reference_box": null,
+      "selected_iou": 0.0
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "far",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": false,
+      "image_id": "far_absent",
+      "latency_ms": 3.6771670002053725,
+      "raw_detections": [],
+      "reference_box": null,
+      "selected_iou": 0.0
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "occluded",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": false,
+      "image_id": "occluded_absent",
+      "latency_ms": 4.175875000328233,
+      "raw_detections": [],
+      "reference_box": null,
+      "selected_iou": 0.0
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "rotated",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": false,
+      "image_id": "rotated_absent",
+      "latency_ms": 4.113041999517009,
+      "raw_detections": [],
+      "reference_box": null,
+      "selected_iou": 0.0
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "cluttered",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": false,
+      "image_id": "cluttered_absent",
+      "latency_ms": 4.011791999801062,
+      "raw_detections": [],
+      "reference_box": null,
+      "selected_iou": 0.0
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "blur",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": false,
+      "image_id": "blur_absent",
+      "latency_ms": 3.943708999941009,
+      "raw_detections": [],
+      "reference_box": null,
+      "selected_iou": 0.0
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "background",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": false,
+      "image_id": "background_absent",
+      "latency_ms": 4.056125000715838,
+      "raw_detections": [],
+      "reference_box": null,
+      "selected_iou": 0.0
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "independent",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": true,
+      "image_id": "independent_mug",
+      "latency_ms": 4.455457999938517,
+      "raw_detections": [],
+      "reference_box": [
+        26.0,
+        0.0,
+        345.6,
+        278.40000000000003
+      ],
+      "selected_iou": 0.6264000000000002
+    },
+    {
+      "bbox": [
+        0,
+        0,
+        480,
+        320
+      ],
+      "condition": "independent",
+      "confidence": 1.0,
+      "detected": true,
+      "detections": [],
+      "expected": true,
+      "image_id": "independent_cup",
+      "latency_ms": 4.046459000164759,
+      "raw_detections": [],
+      "reference_box": [
+        165.9776,
+        3.2,
+        148.512,
+        300.8
+      ],
+      "selected_iou": 0.290836
+    }
+  ],
+  "schema_version": 2,
+  "selected_threshold": null,
+  "settings": {
+    "blur_kernel": 7,
+    "brightness": -41,
+    "contrast": 1.4,
+    "h_high": 145,
+    "h_low": 0,
+    "kernel": 7,
+    "min_area": 3193,
+    "min_circularity": 0.1,
+    "s_high": 174,
+    "s_low": 0,
+    "smoothing": "Gaussian",
+    "v_high": 255,
+    "v_low": 69
+  },
+  "target": "cup"
+}

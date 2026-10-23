@@ -1,0 +1,17 @@
+[
+  {
+    "camera_wait_steps": 4,
+    "elapsed_sim_seconds": 19.53,
+    "line_loss_events": 0,
+    "mean_absolute_image_error_when_visible": 0.34897774022673805,
+    "outcome": "complete",
+    "recorded_steps": 209,
+    "visited_colors": [
+      "red",
+      "green",
+      "turquoise",
+      "blue"
+    ],
+    "world": "pillars"
+  }
+]

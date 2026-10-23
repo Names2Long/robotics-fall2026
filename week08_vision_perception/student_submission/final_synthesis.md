@@ -1,0 +1,9 @@
+From the three missions, I observed that visual evidence can guide a robots actions without proving object identity, distance, or safety.
+
+In Mission 1, lowering the classical detector’s circularity threshold from 0.60 to 0.10 made a contour with circularity 0.1355 eligible. However, its box covered almost the entire image instead of isolating the mug. Passing the color and shape rules therefore did not establish that the selected region was the target. For normal_1, the learned classifier’s highest scoring label was notebook, which described the scene without locating the mug. The foreground segmentation had mask IoU 0.5756, with both extra foreground and missed cup pixels. Detailed boundaries alone did not establish cup identity.
+
+In Mission 2, I noticed it took 9.53 simulation seconds to complete all four colors . The final blue mask isolated the pillars colored region, and its centroid was close to the image center. Negative horizontal error produced a positive angular command, turning the robot left toward the target. Forward commands remained zero. This demonstrated image based centering, but not recognition of a unique landmark or measurement of its distance.
+
+In Mission 3, my practice attempt and tracked attempt both used gain 0.08 and maximum speed 0.16 m/s. Mean absolute image error increased from approximately 0.144 on practice to 0.483 on the track. The track nevertheless completed in 187.25 simulation seconds without line loss. I infer that this controller could follow the route under the tested conditions, although completion did not mean consistently accurate centering.
+
+Together, these results show why perception must be evaluated alongside the actions it produces. A real assistive or delivery robot would also need depth, calibration, obstacle detection, and testing under varied conditions before these image based behaviors could support safe physical interaction.
