@@ -3,10 +3,15 @@ __pycache__/
 .venv/
 .pytest_cache/
 runtime/
-student_submission/*
-!student_submission/.gitkeep
+# Students must be able to commit answers, evidence and the manifest normally.
+student_submission/autosave/*.bak
+student_submission/autosave/*recovery*
+student_submission/autosave/*unreadable*
 ros2_ws/build/
 ros2_ws/install/
 ros2_ws/log/
 assets/models/*.onnx
+!assets/models/detector.onnx
+!assets/models/classifier.onnx
+!assets/models/segmenter.onnx
 assets/models/*.pt

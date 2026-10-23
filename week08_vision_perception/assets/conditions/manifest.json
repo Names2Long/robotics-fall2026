@@ -1,14 +1,13 @@
 {
-  "schema_version": 1,
-  "target": "course target",
-  "conditions": [
-    {"id": "normal", "expected": true, "change": "normal lighting and front view"},
-    {"id": "dim", "expected": true, "change": "reduced illumination"},
-    {"id": "glare", "expected": true, "change": "bright highlight and reduced saturation"},
-    {"id": "far", "expected": true, "change": "small apparent target area"},
-    {"id": "occluded", "expected": true, "change": "approximately 40 percent occlusion"},
-    {"id": "rotated", "expected": true, "change": "unusual orientation"},
-    {"id": "cluttered", "expected": true, "change": "target among unrelated objects"},
-    {"id": "distractor", "expected": false, "change": "similar color or category but wrong object"}
-  ]
+  "schema_version": 2,
+  "target": "cup",
+  "version": "tabletop-controls-v5",
+  "source": "tabletop.jpg",
+  "source_license": "CC0",
+  "source_author": "Ryan Riggins",
+  "evaluation_image_count": 31,
+  "conditions": ["normal", "dim", "glare", "far", "occluded", "rotated", "cluttered", "distractor", "blur", "background", "independent"],
+  "independent_sources": ["independent_mug.jpg", "independent_cup.jpg"],
+  "label_scope": "image-level cup presence, approximate visible-mug reference rectangles, visible-mug masks from a manual polygon with a handle hole for source variants and empty masks for negatives. The source mug is clipped at the top. Independent photos have no pixel annotation.",
+  "generalization_limit": "controlled variants, synthetic negative controls, and only two independent transfer photographs"
 }

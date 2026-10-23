@@ -1,0 +1,31 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+body { margin:0; color:#888; font:14px sans-serif; }
+img { display:block; width:100%; max-width:480px; cursor:crosshair; }
+</style></head><body>
+<img id="scene" alt="Click the desk photograph to select a pixel" tabindex="0">
+<p id="selection" aria-live="polite">Click the photograph. You can also use the coordinate sliders below.</p>
+<script>
+const send = (type, data={}) => parent.postMessage({isStreamlitMessage:true, type, ...data}, '*');
+let args;
+const img = document.getElementById('scene');
+function resize() { send('streamlit:setFrameHeight', {height:document.body.scrollHeight+4}); }
+window.addEventListener('message', event => {
+  if(event.data.type !== 'streamlit:render') return;
+  args = event.data.args;
+  const src = 'data:image/png;base64,'+args.image;
+  if(img.src !== src) img.src = src;
+  resize();
+});
+img.onload = resize;
+new ResizeObserver(resize).observe(document.body);
+img.onclick = event => {
+  if(!args) return;
+  const r = img.getBoundingClientRect();
+  const x = Math.min(args.width-1, Math.floor((event.clientX-r.left)*args.width/r.width));
+  const y = Math.min(args.height-1, Math.floor((event.clientY-r.top)*args.height/r.height));
+  document.getElementById('selection').textContent = `Selected pixel (${x}, ${y}). Press Run this step below to inspect it.`;
+  send('streamlit:setComponentValue', {value:{x,y,token:Date.now()+':'+Math.random()}});
+};
+send('streamlit:componentReady', {apiVersion:1});
+</script></body></html>

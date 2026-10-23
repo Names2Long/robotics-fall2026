@@ -1,33 +1,74 @@
-from __future__ import annotations
 import argparse
-from lab.autosave import load_state,save
-from lab.navigation import LABELS,current_stage,render_progress,set_stage
+from lab.autosave import load_state, save, KEYS
 from lab.session import initialize
+from lab.navigation import LABELS, current_stage, render_progress, set_stage, footer, scroll_to_top
+from lab.submissions import export, backup_bytes
 from lab_config import LAB
-from pages import concepts,final,intro,mission_1,mission_2,mission_3,preflight
-PAGES={"intro":intro.render,"concepts":concepts.render,"preflight":preflight.render,"mission_1":mission_1.render,"mission_2":mission_2.render,"mission_3":mission_3.render,"final":final.render}
-def run_smoke_test():
-    from evaluation.metrics import evaluate_rows,threshold_sweep
-    from evaluation.behavior import BehaviorConfig,DEFAULT_SCENARIOS,evaluate_scenarios
-    from missions import mission_1 as m1,mission_2 as m2,mission_3 as m3
-    conditions=("normal","dim","glare","far","occluded","rotated","cluttered","distractor");rows=[{"condition":name,"expected":name!="distractor","detected":name not in ("far","distractor"),"confidence":.85 if name not in ("far","distractor") else .2,"latency_ms":12} for name in conditions];metrics=evaluate_rows(rows)
-    responses={**{f"mission_1.{key}":"Evidence-based explanation of parameter effects, condition outcomes, image evidence, and a specific failure. "*2 for key in m1.REFLECTIONS},**{f"mission_2.{key}":"Evidence-based comparison of precision, recall, confidence thresholds, errors, limitations, and safety. "*2 for key in m2.REFLECTIONS}}
-    classical={"rows":rows,"metrics":metrics};learned={"rows":rows,"metrics":metrics,"threshold_sweep":threshold_sweep(rows),"selected_threshold":.5};assert m1.evaluate(classical,responses,4).passed;assert m2.evaluate(learned,responses,4).passed
-    behavior={"config":BehaviorConfig().__dict__,"result":evaluate_scenarios(DEFAULT_SCENARIOS,BehaviorConfig())};responses.update({f"mission_3.{key}":"Evidence-based system trace, environmental breakdown analysis, safe fallback, and deployment limitation. "*2 for key in m3.REFLECTIONS});assert m3.evaluate(behavior,responses,2).passed;print("Week 8 lab smoke test passed.")
+from pages import concepts, final, intro, investigation, preflight
+from pages import robot_missions
+
+PAGES = {"intro": intro.render, "concepts": concepts.render, "preflight": preflight.render,
+         "investigation": investigation.render, "final": final.render,
+         "pillar_search": robot_missions.pillars,
+         "line_following": robot_missions.line}
+
+
 def run_streamlit_app():
     import streamlit as st
-    st.set_page_config(page_title=LAB.title,page_icon="📷",layout="wide");initialize(st);saved=load_state()
-    if saved and not st.session_state.get("loaded_autosave"):
-        for key in ("student","responses","completed_missions","checked_evidence_ids","evidence"):
-            if key in saved:st.session_state[key]=saved[key]
-        st.session_state["loaded_autosave"]=True
-    render_progress(st);completed=set(st.session_state["completed_missions"]);identity=all(str(value).strip() for value in st.session_state["student"].values());preflight_ready=bool(st.session_state["evidence"].get("preflight",{}).get("ready"));access={"intro":True,"concepts":identity,"preflight":identity,"mission_1":preflight_ready or "mission_1" in completed,"mission_2":"mission_1" in completed,"mission_3":"mission_2" in completed,"final":"mission_3" in completed}
-    with st.sidebar.expander("Lab navigation",expanded=True):
+    st.set_page_config(page_title=LAB.title, page_icon="📷", layout="centered")
+    initialize(st)
+    if not st.session_state.get("loaded_autosave"):
+        saved = load_state()
+        for key in (*KEYS, "recovery_blocked", "recovery_note", "recovered"):
+            if key in saved: st.session_state[key] = saved[key]
+        st.session_state["loaded_autosave"] = True
+        st.session_state["scroll_to_top"] = True
+    if st.session_state.get("recovery_note"): st.warning(st.session_state["recovery_note"])
+    if st.session_state.get("save_error"): st.error("Saving failed: "+st.session_state["save_error"]+". Keep this page open and copy your current answer before restarting.")
+    with st.sidebar:
+        st.subheader("Lab 7")
         for stage in LAB.stages:
-            if st.button(LABELS[stage],key=f"nav.{stage}",disabled=not access[stage] or stage==current_stage(st),width="stretch"):set_stage(st,stage)
-    PAGES[current_stage(st)](st)
-    try:save(st);st.sidebar.caption("Progress auto-saved locally")
-    except OSError as error:st.sidebar.error(f"Autosave failed: {error}")
+            if st.button(LABELS[stage], key="nav."+stage, disabled=stage == current_stage(st)):
+                set_stage(st, stage)
+        if st.button("Save draft and prepare backup"):
+            try:
+                export(st)
+                st.session_state['prepared_backup'] = backup_bytes()
+                st.success("Draft saved")
+            except (OSError, ValueError) as error: st.error(str(error))
+        if st.session_state.get('prepared_backup') is not None:
+            st.download_button("Download saved backup", st.session_state['prepared_backup'], "lab7-backup.zip", "application/zip")
+        st.caption("Press Save draft and prepare backup to create a current ZIP. A prepared download is a snapshot from that button press, not later edits.")
+    if st.session_state.get("recovery_blocked"): st.stop()
+    render_progress(st)
+    try:
+        PAGES[current_stage(st)](st)
+        footer(st)
+        scroll_to_top(st)
+        save(st)
+        st.sidebar.caption("Answers and progress saved locally")
+    except (OSError, ValueError) as error:
+        st.error(f"Could not complete this operation: {error}. Your earlier saved work is retained.")
+
+
+def run_smoke_test():
+    from perception.experiments import run, validate
+    for method in ("classical", "learned"):
+        evidence = run(method)
+        print(method, validate(evidence, method)["metrics"])
+    print("Lab 7 detector investigation smoke test passed")
+
+
 def main():
-    parser=argparse.ArgumentParser(description=LAB.title);parser.add_argument("--smoke-test",action="store_true");args=parser.parse_args();run_smoke_test() if args.smoke_test else run_streamlit_app()
-if __name__=="__main__":main()
+    parser = argparse.ArgumentParser(description=LAB.title)
+    parser.add_argument("--smoke-test", action="store_true")
+    # Streamlit and AppTest may supply their own process arguments.
+    args, _ = parser.parse_known_args()
+    if args.smoke_test: run_smoke_test()
+    else:
+        import streamlit as st
+        # These page modules are render helpers, not standalone Streamlit apps.
+        st.navigation([st.Page(run_streamlit_app, title=LAB.title)], position="hidden").run()
+
+
+if __name__ == "__main__": main()

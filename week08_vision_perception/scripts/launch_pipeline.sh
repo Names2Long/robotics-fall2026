@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-set -eo pipefail
-if [[ $# -lt 1 ]]; then echo "Usage: $0 classical|learned [camera_topic] [false|true enable_behavior]"; exit 2; fi
-LAB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-source /opt/ros/jazzy/setup.bash
-source "$LAB_ROOT/ros2_ws/install/setup.bash"
-set -u
-ros2 launch week08_perception pipeline.launch.py mode:="$1" camera_topic:="${2:-/camera/image_raw}" enable_behavior:="${3:-false}" model_path:="$LAB_ROOT/assets/models/detector.onnx" labels_path:="$LAB_ROOT/assets/models/labels.txt"
+set -e
+if [[ "${1:-}" != classical && "${1:-}" != learned ]]; then
+  echo "Usage: bash scripts/launch_pipeline.sh classical|learned [camera_topic]"
+  exit 2
+fi
+source "$(dirname "${BASH_SOURCE[0]}")/ros_env.sh"
+exec ros2 launch week08_perception pipeline.launch.py mode:="$1" camera_topic:="${2:-/camera/image_raw}" model_path:="$LAB7_ROOT/assets/models/detector.onnx"

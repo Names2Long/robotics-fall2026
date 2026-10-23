@@ -1,0 +1,8 @@
+{
+  "image": "tabletop.jpg",
+  "annotation_coordinates": [480, 320],
+  "target": "visible mug body and handle, excluding handle hole and shadow",
+  "note": "Approximate manual outline traced independently of model outputs. Mug top is outside the source frame. No hidden extent is inferred.",
+  "polygon": [[236,0],[323,0],[323,17],[339,12],[356,12],[372,19],[381,30],[382,43],[375,56],[362,66],[345,72],[322,70],[320,91],[310,102],[289,108],[268,107],[250,102],[242,92],[238,63]],
+  "holes": [[[324,29],[340,23],[354,24],[365,29],[370,38],[365,48],[355,56],[340,61],[323,58]]]
+}
