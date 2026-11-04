@@ -1,0 +1,15 @@
+map,planner,condition,attempts,success_rate
+constrained,astar,baseline,1,1.0
+constrained,bfs,baseline,1,1.0
+constrained,dfs,baseline,1,0.0
+constrained,iddfs,baseline,1,0.0
+constrained,nav2,baseline,1,1.0
+constrained,prm,baseline,1,1.0
+constrained,rrt,baseline,1,1.0
+open,astar,baseline,1,1.0
+open,bfs,baseline,1,1.0
+open,dfs,baseline,1,0.0
+open,iddfs,baseline,1,0.0
+open,nav2,baseline,1,1.0
+open,prm,baseline,1,1.0
+open,rrt,baseline,1,1.0

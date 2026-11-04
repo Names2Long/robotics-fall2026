@@ -1,0 +1,30 @@
+[INFO] [1793822540.017155554] [lab8_experiment_probe]: Waiting for Nav2 planning and path-following actions
+[INFO] [1793822540.784220512] [lab8_experiment_probe]: Waiting for map-frame robot position and lidar
+[INFO] [1793822543.647024750] [lab8_experiment_probe]: Waiting for planner_server lifecycle activation
+[INFO] [1793822544.800851875] [lab8_experiment_probe]: Waiting for controller_server lifecycle activation
+[INFO] [1793822544.812870583] [lab8_experiment_probe]: Waiting for velocity_smoother lifecycle activation
+[INFO] [1793822545.323849000] [lab8_experiment_probe]: Waiting for collision_monitor lifecycle activation
+[INFO] [1793822545.328565584] [lab8_experiment_probe]: Nav2 ready. Preparing the requested path
+[INFO] [1793822545.359580417] [lab8_experiment_probe]: Following path: 0 simulated seconds, estimated goal distance awaiting first execution checkpoint
+[INFO] [1793822550.364181753] [lab8_experiment_probe]: Following path: 5 simulated seconds, estimated goal distance 8.62 m
+[INFO] [1793822555.369104838] [lab8_experiment_probe]: Following path: 9 simulated seconds, estimated goal distance 7.93 m
+[INFO] [1793822560.371941341] [lab8_experiment_probe]: Following path: 14 simulated seconds, estimated goal distance 7.09 m
+[INFO] [1793822565.375834052] [lab8_experiment_probe]: Following path: 18 simulated seconds, estimated goal distance 6.46 m
+[INFO] [1793822570.379697179] [lab8_experiment_probe]: Following path: 23 simulated seconds, estimated goal distance 5.97 m
+[INFO] [1793822575.384506125] [lab8_experiment_probe]: Following path: 27 simulated seconds, estimated goal distance 5.76 m
+[INFO] [1793822580.388970836] [lab8_experiment_probe]: Following path: 31 simulated seconds, estimated goal distance 5.24 m
+[INFO] [1793822585.392189713] [lab8_experiment_probe]: Following path: 35 simulated seconds, estimated goal distance 4.03 m
+[INFO] [1793822590.394987757] [lab8_experiment_probe]: Following path: 40 simulated seconds, estimated goal distance 2.93 m
+[INFO] [1793822595.398068552] [lab8_experiment_probe]: Following path: 44 simulated seconds, estimated goal distance 2.86 m
+[INFO] [1793822600.402152179] [lab8_experiment_probe]: Following path: 49 simulated seconds, estimated goal distance 3.56 m
+[INFO] [1793822605.406256834] [lab8_experiment_probe]: Following path: 53 simulated seconds, estimated goal distance 4.45 m
+[INFO] [1793822610.409262503] [lab8_experiment_probe]: Following path: 58 simulated seconds, estimated goal distance 5.63 m
+[INFO] [1793822615.412138088] [lab8_experiment_probe]: Following path: 62 simulated seconds, estimated goal distance 6.11 m
+[INFO] [1793822620.415338883] [lab8_experiment_probe]: Following path: 67 simulated seconds, estimated goal distance 5.64 m
+[INFO] [1793822625.425278218] [lab8_experiment_probe]: Following path: 71 simulated seconds, estimated goal distance 5.47 m
+[INFO] [1793822630.434599429] [lab8_experiment_probe]: Following path: 76 simulated seconds, estimated goal distance 4.47 m
+[INFO] [1793822635.444064792] [lab8_experiment_probe]: Following path: 80 simulated seconds, estimated goal distance 3.22 m
+[INFO] [1793822640.447992503] [lab8_experiment_probe]: Following path: 85 simulated seconds, estimated goal distance 1.96 m
+[INFO] [1793822645.452634838] [lab8_experiment_probe]: Following path: 89 simulated seconds, estimated goal distance 0.68 m
+[INFO] [1793822648.235582215] [lab8_experiment_probe]: Finishing trial: succeeded
+{"status": "succeeded", "output": "/workspace/week09_planning_navigation/runtime/trials/constrained_bfs_0_baseline_cb9c916e9e/result.json"}

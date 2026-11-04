@@ -1,0 +1,7 @@
+map,planner,condition,attempts,success_rate
+open,astar,baseline,1,1.0
+open,astar,social_1,1,1.0
+open,astar,social_2,1,1.0
+open,rrt,baseline,1,1.0
+open,rrt,social_1,1,1.0
+open,rrt,social_2,1,1.0
