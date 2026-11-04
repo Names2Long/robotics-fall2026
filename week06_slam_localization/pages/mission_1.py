@@ -6,7 +6,7 @@ from lab.controls import prediction
 from lab.evidence import artifact, load_json, runtime_map, validate_map_bundle
 from lab.session import complete_mission
 from lab.submissions import save_mission
-from lab.ui import render_check, show_map, text_response
+from lab.ui import include_screenshot, render_check, show_map, text_response
 from missions.mission_1 import evaluate
 from lab_config import WORLD_ID
 
@@ -77,8 +77,9 @@ def render(st):
     text_response(st, "mission_1.limitations", "Point to an area that remained unknown or poorly outlined when you stopped. Where is it in your RViz screenshot, and how did your route or the LiDAR's line of sight leave that gap?")
     text_response(st, "mission_1.drift_and_revisit", "When you returned to an area you had already scanned, did the new scan line up with its mapped walls? Did an old wall visibly shift or double? Describe what you saw. If you cannot tell whether SLAM corrected drift, say what evidence is missing rather than claiming a loop closure.")
     check = evaluate(evidence if metrics is not None else None, st.session_state["responses"], metrics is not None, metrics is not None)
+    check = include_screenshot(check, screenshot)
     render_check(st, check)
-    if st.button("Check and save Mission 1", type="primary", disabled=not check.passed or screenshot is None):
+    if st.button("Check and save Mission 1", type="primary", disabled=not check.passed):
         prior = st.session_state["evidence"].get("mission_1")
         st.session_state["evidence"]["mission_1"] = evidence
         signature = current_signature(st, "mission_1")

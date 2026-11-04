@@ -14,7 +14,7 @@ Weeks 1, 3, 6, 8, 9, and 11 reuse one cross-platform Docker environment. Student
 - [Week 5 overview](week05_sensors_uncertainty/OVERVIEW.md) — individual, self-contained lab for sensor characterization, filtering, fusion, and decisions under uncertainty.
 - [Week 6 overview](week06_slam_localization/OVERVIEW.md) — individual ROS 2 lab for mapping and exploration-strategy comparison.
 - [Week 8 overview](week08_vision_perception/OVERVIEW.md) — individual ROS 2 lab comparing classical and learned vision and connecting perception to bounded behavior.
-- [Week 9 overview](week09_planning_navigation/OVERVIEW.md) — individual ROS 2 lab for path inspection, repeatable Nav2 trials, and a human-aware navigation redesign.
+- [Week 9 overview](week09_planning_navigation/OVERVIEW.md): Lab 8 implements and compares grid searches, executes seven planners on two maps, and evaluates human-aware potential fields.
 - [Week 10 overview](week10_foundation_models/OVERVIEW.md) — individual, self-contained lab for evaluating foundation-model plans and visual interpretations through a safety verification layer.
 - [Week 11 overview](week11_hri_evaluation/OVERVIEW.md) — individual ROS 2 lab using paired participation for baseline interaction evaluation, evidence-driven redesign, and matched retesting.
 - [Week 12 overview](week12_responsible_robotics/OVERVIEW.md) — individual, self-contained lab translating privacy, fairness, safety, accessibility, and human-control requirements into tested system behavior.

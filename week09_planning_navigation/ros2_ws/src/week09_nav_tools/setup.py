@@ -21,6 +21,7 @@ setup(
         "plan_probe = week09_nav_tools.plan_probe:main",
         "navigate_probe = week09_nav_tools.navigate_probe:main",
         "social_monitor = week09_nav_tools.social_monitor:main",
+        "experiment_probe = week09_nav_tools.experiment_probe:main",
     ]},
 )
 

@@ -12,7 +12,7 @@ class LabConfig:
 
 LAB = LabConfig(
     id="week09_planning_navigation",
-    title="Week 9: Planning and Human-Aware Navigation",
+    title="Lab 8 (Week 9): Planning and Human-Aware Navigation",
     stages=("intro", "concepts", "preflight", "mission_1", "mission_2", "mission_3", "final"),
     missions=("mission_1", "mission_2", "mission_3"),
 )

@@ -1,6 +1,17 @@
 from lab.session import response, set_response
 
 
+def include_screenshot(check, screenshot):
+    """Keep the visible checklist and save-button requirements identical."""
+    from lab.models import RequirementResult, make_check
+    requirement = RequirementResult(
+        'screenshot', 'RViz screenshot is available', screenshot is not None,
+        screenshot.name if screenshot is not None else 'Not found',
+        'saved RViz screenshot',
+    )
+    return make_check(check.summary, (*check.requirements, requirement))
+
+
 def text_response(st, key, label, height=110):
     widget = f"field.{key}"
     if widget not in st.session_state:

@@ -1,4 +1,7 @@
-from evaluation.contracts import plan_requirements
-REFLECTIONS = ("prediction", "comparison", "failure")
-def evaluate(evidence): return plan_requirements(evidence or {})
+"""Current offline-search evidence contract."""
+from evaluation.experiments import offline_checks
+REFLECTIONS = ("search", "failure")
+
+def evaluate(evidence):
+    return offline_checks(evidence or {})
 

@@ -6,7 +6,7 @@ from lab.controls import prediction
 from lab.evidence import artifact, evidence_id, load_json, runtime_map, validate_map_bundle
 from lab.session import complete_mission
 from lab.submissions import save_mission
-from lab.ui import render_check, show_map, text_response
+from lab.ui import include_screenshot, render_check, show_map, text_response
 from missions.mission_2 import evaluate
 from lab_config import WORLD_ID
 
@@ -88,6 +88,8 @@ def render(st):
     saved_screens = sorted((submission_root() / "mission_2").glob("rviz_screenshot.*"))
     screenshot = (artifact(None, ROOT / "runtime/maps/mission2/rviz.png")
                   or (artifact(None, saved_screens[0]) if saved_screens else None))
+    if screenshot is None:
+        st.info('The Mission 2 RViz screenshot is missing. In the course virtual desktop, run the capture command above to save `runtime/maps/mission2/rviz.png`. Switch to RViz during the delay, then click Check saved comparison files. Your map and answers are retained. You do not need to redo mapping to capture this image.')
     second = load_json(evidence_item)
     metrics, error = validate_map_bundle(second, yaml_item, image_item)
     if error: st.info(error)
@@ -106,8 +108,9 @@ def render(st):
     text_response(st, "mission_2.comparison", "Using the table above, cite both elapsed times and at least two map measurements. Which route gave more useful coverage for the time spent? Was your prediction supported? Explain any tradeoff between speed and map quality.")
     text_response(st, "mission_2.map_choice", "Look at both map images. Which would you trust more for a later robot task? Point to visible evidence such as wall alignment, missing rooms, or duplicate structures. State one limit of what these images and numbers can prove.")
     check = evaluate(first, second if metrics is not None else None, st.session_state["responses"])
+    check = include_screenshot(check, screenshot)
     render_check(st, check)
-    if st.button("Check and save Mission 2", type="primary", disabled=not check.passed or screenshot is None):
+    if st.button("Check and save Mission 2", type="primary", disabled=not check.passed):
         prior = st.session_state["evidence"].get("mission_2")
         st.session_state["evidence"]["mission_2"] = second
         signature = current_signature(st, "mission_2")

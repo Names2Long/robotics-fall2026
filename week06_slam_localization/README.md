@@ -54,6 +54,10 @@ git push origin main
 
 Open the commit on GitHub, verify that it contains your submission files, and submit its URL through the course submission system. The ZIP is a backup, not an automatic upload.
 
+Both mapping missions show screenshot availability in their checklists. If that row says Not found, capture the RViz view at the mission's displayed `runtime/maps/mission1/rviz.png` or `runtime/maps/mission2/rviz.png` path and press the saved-files check button. You do not need to repeat mapping just to capture its displayed result. The guide also recognizes screenshots retained in the saved mission folder.
+
+Submission answers, maps and screenshots belong in normal Git commits. Only runtime/build files and local recovery copies are ignored. If Git reports nothing to commit, inspect the actual submission directory and the downloaded backup first. A folder containing only `.gitkeep` has no saved submission artifacts to commit. Do not reset or delete work to resolve this.
+
 If the guide reports an unreadable autosave, do not reset or delete files. Copy `student_submission/` somewhere safe and contact the instructor. A prior valid autosave is recovered automatically when possible, with the unreadable copy preserved.
 
 ## Maintainer verification

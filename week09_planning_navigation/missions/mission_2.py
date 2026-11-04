@@ -1,4 +1,7 @@
-from evaluation.contracts import navigation_requirements
-REFLECTIONS = ("plan_execution", "recovery", "measurement")
-def evaluate(evidence): return navigation_requirements(evidence or {})
+"""Current two-map navigation evidence contract."""
+from evaluation.experiments import navigation_checks
+REFLECTIONS = ("performance", "choice")
+
+def evaluate(evidence, source_hash):
+    return navigation_checks((evidence or {}).get("rows", []), source_hash)
 

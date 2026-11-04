@@ -3,8 +3,8 @@ __pycache__/
 .venv/
 .pytest_cache/
 runtime/
-student_submission/*
-!student_submission/.gitkeep
+# Submission answers, maps and screenshots must be commit-able normally.
+# Local recovery copies are excluded by the repository-level .gitignore.
 ros2_ws/build/
 ros2_ws/install/
 ros2_ws/log/

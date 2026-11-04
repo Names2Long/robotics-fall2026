@@ -61,7 +61,8 @@ def write_final_reflection(st) -> Path:
     words = word_count(answer)
     if not 1 <= words <= MAX_WORDS:
         raise ValueError("Final reflection must contain 1–300 words.")
-    root = Path(__file__).resolve().parents[1] / LAB.submission_directory
+    from lab.storage import submission_root
+    root = submission_root()
     root.mkdir(parents=True, exist_ok=True)
     lines = [
         "# Final reflection",

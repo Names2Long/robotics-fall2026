@@ -1,4 +1,7 @@
-from evaluation.contracts import human_aware_requirements
-REFLECTIONS = ("appropriateness", "redesign", "tradeoff")
-def evaluate(evidence): return human_aware_requirements(evidence or {})
+"""Current paired potential-field experiment contract."""
+from evaluation.experiments import social_checks
+REFLECTIONS = ("prediction", "comparison", "recommendation")
+
+def evaluate(evidence):
+    return social_checks((evidence or {}).get("rows", []))
 
