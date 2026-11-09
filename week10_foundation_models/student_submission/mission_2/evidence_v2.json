@@ -1,0 +1,158 @@
+{
+  "version": 2,
+  "run_id": "938f3fb8691d40088fc52560b9e86fad",
+  "mission": "mission_2",
+  "saved_at": "2026-11-09T00:40:16.253366+00:00",
+  "settings": {
+    "experiment": "local-live-v2",
+    "model": {
+      "id": "HuggingFaceTB/SmolVLM-500M-Instruct",
+      "revision": "a7da5b986cb59b408707209984f360a5f4ad7e47"
+    }
+  },
+  "rows": [
+    {
+      "job_id": "aeb89b2a501b41acbf0e2bf90c42463b",
+      "kind": "vision",
+      "case": "identify",
+      "prompt": "What tool is lying in the foreground of this workbench?",
+      "phase": "baseline",
+      "parent_id": null,
+      "requested_at": "2026-11-09T00:35:10.350366+00:00",
+      "comparison_ids": [],
+      "output": "Tape measure.",
+      "model": "HuggingFaceTB/SmolVLM-500M-Instruct",
+      "model_revision": "a7da5b986cb59b408707209984f360a5f4ad7e47",
+      "system_prompt": "",
+      "model_input": "What tool is lying in the foreground of this workbench?",
+      "image_sha256": "0c0e4365ce25ec9f22daf3bd4d95883bddd9782289ec17fdb7d2b7c4e8b280ff",
+      "image_preprocessing": {
+        "longest_edge": 512,
+        "image_splitting": false
+      },
+      "generated_tokens": 4,
+      "max_new_tokens": 80,
+      "generation_seconds": 4.961,
+      "truncated": false,
+      "decoding": "greedy",
+      "device": "cpu",
+      "live_inference": true,
+      "library_versions": {
+        "torch": "2.8.0+cpu",
+        "transformers": "4.57.1"
+      },
+      "output_constraint": null,
+      "completed_at": "2026-11-09T00:35:15.448892+00:00"
+    },
+    {
+      "job_id": "2a113fad487a445ca8b1db971598337a",
+      "kind": "vision",
+      "case": "spatial",
+      "prompt": "Where is the black vertical metal post relative to the tool in the foreground?",
+      "phase": "baseline",
+      "parent_id": null,
+      "requested_at": "2026-11-09T00:35:41.125722+00:00",
+      "comparison_ids": [],
+      "output": "The black vertical metal post is to the right of the tool in the foreground.",
+      "model": "HuggingFaceTB/SmolVLM-500M-Instruct",
+      "model_revision": "a7da5b986cb59b408707209984f360a5f4ad7e47",
+      "system_prompt": "",
+      "model_input": "Where is the black vertical metal post relative to the tool in the foreground?",
+      "image_sha256": "0c0e4365ce25ec9f22daf3bd4d95883bddd9782289ec17fdb7d2b7c4e8b280ff",
+      "image_preprocessing": {
+        "longest_edge": 512,
+        "image_splitting": false
+      },
+      "generated_tokens": 17,
+      "max_new_tokens": 80,
+      "generation_seconds": 13.321,
+      "truncated": false,
+      "decoding": "greedy",
+      "device": "cpu",
+      "live_inference": true,
+      "library_versions": {
+        "torch": "2.8.0+cpu",
+        "transformers": "4.57.1"
+      },
+      "output_constraint": null,
+      "completed_at": "2026-11-09T00:35:54.580945+00:00"
+    },
+    {
+      "job_id": "e709670efc464e17806a0235dc79d97d",
+      "kind": "vision",
+      "case": "purpose",
+      "prompt": "A robot needs the correct tool for its task. Which object in this image should it pick up?",
+      "phase": "baseline",
+      "parent_id": null,
+      "requested_at": "2026-11-09T00:36:23.264766+00:00",
+      "comparison_ids": [],
+      "output": "The robot needs the correct tool for its task. The correct tool is a measuring tape.",
+      "model": "HuggingFaceTB/SmolVLM-500M-Instruct",
+      "model_revision": "a7da5b986cb59b408707209984f360a5f4ad7e47",
+      "system_prompt": "",
+      "model_input": "A robot needs the correct tool for its task. Which object in this image should it pick up?",
+      "image_sha256": "0c0e4365ce25ec9f22daf3bd4d95883bddd9782289ec17fdb7d2b7c4e8b280ff",
+      "image_preprocessing": {
+        "longest_edge": 512,
+        "image_splitting": false
+      },
+      "generated_tokens": 19,
+      "max_new_tokens": 80,
+      "generation_seconds": 20.166,
+      "truncated": false,
+      "decoding": "greedy",
+      "device": "cpu",
+      "live_inference": true,
+      "library_versions": {
+        "torch": "2.8.0+cpu",
+        "transformers": "4.57.1"
+      },
+      "output_constraint": null,
+      "completed_at": "2026-11-09T00:36:43.605775+00:00"
+    },
+    {
+      "job_id": "66f76a63a2c94c2fb31b25507053f768",
+      "kind": "vision",
+      "case": "custom",
+      "prompt": "Decide. The robot\u2019s goal is to mark a circle on a flat wooden workpiece. Which tool in the photograph could help it mark the circle? Describe the visible features that support your choice. Then explain what the robot would need to check before using the tool, including whether it can grasp and control it.",
+      "phase": "custom",
+      "parent_id": null,
+      "requested_at": "2026-11-09T00:38:30.342152+00:00",
+      "comparison_ids": [
+        "aeb89b2a501b41acbf0e2bf90c42463b",
+        "2a113fad487a445ca8b1db971598337a",
+        "e709670efc464e17806a0235dc79d97d"
+      ],
+      "output": "The robot's goal is to mark a circle on a flat wooden workpiece. The visible features that support the choice of the measuring tool are the measuring device and the measuring tool itself. The measuring device is a tape measure, which is a common tool used for measuring distances. The measuring tool is a tape measure, which is a long, thin tool with a measuring device at one end and a measuring scale",
+      "model": "HuggingFaceTB/SmolVLM-500M-Instruct",
+      "model_revision": "a7da5b986cb59b408707209984f360a5f4ad7e47",
+      "system_prompt": "",
+      "model_input": "Decide. The robot\u2019s goal is to mark a circle on a flat wooden workpiece. Which tool in the photograph could help it mark the circle? Describe the visible features that support your choice. Then explain what the robot would need to check before using the tool, including whether it can grasp and control it.",
+      "image_sha256": "0c0e4365ce25ec9f22daf3bd4d95883bddd9782289ec17fdb7d2b7c4e8b280ff",
+      "image_preprocessing": {
+        "longest_edge": 512,
+        "image_splitting": false
+      },
+      "generated_tokens": 80,
+      "max_new_tokens": 80,
+      "generation_seconds": 60.997,
+      "truncated": true,
+      "decoding": "greedy",
+      "device": "cpu",
+      "live_inference": true,
+      "library_versions": {
+        "torch": "2.8.0+cpu",
+        "transformers": "4.57.1"
+      },
+      "output_constraint": null,
+      "completed_at": "2026-11-09T00:39:31.425952+00:00"
+    }
+  ],
+  "responses": {
+    "analysis": "I chose Decide. The revised answer repeated the goal of marking a circle, but it still recommended a tape measure, just as the original answer did. The photograph shows a metal drawing compass in the foreground, which could be used to mark a circle. The revised answer also left out how the robot would check whether it could grasp and control the tool. It recognized the goal, but it did not make a better tool choice."
+  },
+  "extra": {
+    "draft_signature": "7c31d5482cd8fd3092e2e47751382cc51c9073028df20776419c0c7a14cb582a",
+    "upstream_run": "9a1cd855a23d495795de6de512fb3b77"
+  }
+}

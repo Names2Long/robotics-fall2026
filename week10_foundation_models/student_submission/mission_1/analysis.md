@@ -1,0 +1,1 @@
+Yes.,The original answer claimed the cup was empty before the robot had inspected it. My revised request produced a plan that leaves the cup’s contents unknown until inspection. The proposed actions fit the robot’s capabilities because it can use its wheels to travel from base to the shelf, inspect the cup with its camera, and report what it sees.

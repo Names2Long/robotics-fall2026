@@ -1,0 +1,29 @@
+{
+  "job_id": "b65a9762e071492999092212311bc124",
+  "kind": "language",
+  "case": "custom",
+  "prompt": "Use your current (column,row). In column 1, go UP to row 1. On row 1, go RIGHT to column 7. At (7,1), turn DOWN and follow column 7 to row 7. On row 7, go RIGHT to column 11. In column 11, go UP to (11,1). At (11,1), choose STOP each remaining step.",
+  "phase": "custom",
+  "parent_id": null,
+  "requested_at": "2026-11-09T00:53:42.725039+00:00",
+  "comparison_ids": [
+    "dde2b82afaff41e19aa9b26fbdb41cca",
+    "6a1beb0f4b74428eae541639b281214c",
+    "4bb81737e93744e2b8a5064843703602"
+  ],
+  "task": "robot",
+  "robot_state": {
+    "position": [
+      1,
+      7
+    ],
+    "step": 0,
+    "history": [],
+    "finished": false,
+    "goal_reached": false,
+    "first_goal_step": null,
+    "last_feedback": "No previous action.",
+    "last_decision": null
+  },
+  "simulator_contract": "8da30a943bd97ee39237aa05e8e6800fecdecbef3ce692d7d4e48f851679060f"
+}

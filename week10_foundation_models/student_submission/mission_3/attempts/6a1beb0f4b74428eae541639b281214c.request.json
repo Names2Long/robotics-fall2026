@@ -1,0 +1,25 @@
+{
+  "job_id": "6a1beb0f4b74428eae541639b281214c",
+  "kind": "language",
+  "case": "map",
+  "prompt": "Reach the blue target crate at (11,1). Reply with exactly the word RIGHT until column 3. Then reply UP until row 1. Then go RIGHT toward column 7, DOWN toward row 7, RIGHT toward column 11, and UP toward row 1.",
+  "phase": "baseline",
+  "parent_id": null,
+  "requested_at": "2026-11-09T00:44:18.719033+00:00",
+  "comparison_ids": [],
+  "task": "robot",
+  "robot_state": {
+    "position": [
+      1,
+      7
+    ],
+    "step": 0,
+    "history": [],
+    "finished": false,
+    "goal_reached": false,
+    "first_goal_step": null,
+    "last_feedback": "No previous action.",
+    "last_decision": null
+  },
+  "simulator_contract": "8da30a943bd97ee39237aa05e8e6800fecdecbef3ce692d7d4e48f851679060f"
+}

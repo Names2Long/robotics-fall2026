@@ -1,0 +1,7 @@
+Across the three missions, clearer prompts helped the models give more relevant answers, but they did not guarantee accurate observations or correct actions.
+
+In Mission 1, the model said the robot started at the shelf and found the cup empty. The capability card placed the robot at base, and no camera observation had been made. My revised request produced a feasible plan, navigate to the shelf and inspect the cup. That answer left the contents unknown, which was appropriate because the robot had not actually moved or inspected anything.
+
+In Mission 2, the photograph stayed the same while the task description changed. The original Decide answer chose a measuring tape without knowing the job. When I specified that the goal was to mark a circle, the model chose a compass, matching the two legged metal tool visible in the foreground. Its explanation described what a compass does, though, rather than pointing to a feature it could see. A correct choice did not settle whether the robot could grasp or use the tool.
+
+In Mission 3, I could check the proposed actions against recorded positions. My prompt and the supplied detour prompt produced identical paths, six successful UP moves to (1,1), followed by 22 blocked UP attempts and 22 STOP actions. Neither run reached the goal. The clearest test came at (1,1). The cell to the right was free, and my prompt said to turn RIGHT, but the model never made that turn. The wall check prevented an invalid move. It did not choose a useful one.

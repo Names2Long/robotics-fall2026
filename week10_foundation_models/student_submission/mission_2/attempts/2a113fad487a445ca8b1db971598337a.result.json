@@ -1,0 +1,36 @@
+{
+  "status": "complete",
+  "record": {
+    "job_id": "2a113fad487a445ca8b1db971598337a",
+    "kind": "vision",
+    "case": "spatial",
+    "prompt": "Where is the black vertical metal post relative to the tool in the foreground?",
+    "phase": "baseline",
+    "parent_id": null,
+    "requested_at": "2026-11-09T00:35:41.125722+00:00",
+    "comparison_ids": [],
+    "output": "The black vertical metal post is to the right of the tool in the foreground.",
+    "model": "HuggingFaceTB/SmolVLM-500M-Instruct",
+    "model_revision": "a7da5b986cb59b408707209984f360a5f4ad7e47",
+    "system_prompt": "",
+    "model_input": "Where is the black vertical metal post relative to the tool in the foreground?",
+    "image_sha256": "0c0e4365ce25ec9f22daf3bd4d95883bddd9782289ec17fdb7d2b7c4e8b280ff",
+    "image_preprocessing": {
+      "longest_edge": 512,
+      "image_splitting": false
+    },
+    "generated_tokens": 17,
+    "max_new_tokens": 80,
+    "generation_seconds": 13.321,
+    "truncated": false,
+    "decoding": "greedy",
+    "device": "cpu",
+    "live_inference": true,
+    "library_versions": {
+      "torch": "2.8.0+cpu",
+      "transformers": "4.57.1"
+    },
+    "output_constraint": null,
+    "completed_at": "2026-11-09T00:35:54.580945+00:00"
+  }
+}

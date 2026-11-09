@@ -1,0 +1,14 @@
+{
+  "job_id": "3bb1ea20b16f4665800f9db9944973c6",
+  "kind": "language",
+  "case": "custom",
+  "prompt": "Starting at base, plan how you would navigate to the shelf, inspect the cup with your camera, and report what you observe. Describe the plan without guessing what is inside the cup.",
+  "phase": "custom",
+  "parent_id": null,
+  "requested_at": "2026-11-09T00:33:55.220627+00:00",
+  "comparison_ids": [
+    "19eab07c380b4b8da54b4d27bf4d5019",
+    "0fbebfcc57824abe95aa48f77e169102",
+    "9bae47f9c6924629991e2d1b9d881cbb"
+  ]
+}

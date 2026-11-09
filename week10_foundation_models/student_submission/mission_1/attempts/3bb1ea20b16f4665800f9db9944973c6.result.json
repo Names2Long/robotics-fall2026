@@ -1,0 +1,37 @@
+{
+  "status": "complete",
+  "record": {
+    "job_id": "3bb1ea20b16f4665800f9db9944973c6",
+    "kind": "language",
+    "case": "custom",
+    "prompt": "Starting at base, plan how you would navigate to the shelf, inspect the cup with your camera, and report what you observe. Describe the plan without guessing what is inside the cup.",
+    "phase": "custom",
+    "parent_id": null,
+    "requested_at": "2026-11-09T00:33:55.220627+00:00",
+    "comparison_ids": [
+      "19eab07c380b4b8da54b4d27bf4d5019",
+      "0fbebfcc57824abe95aa48f77e169102",
+      "9bae47f9c6924629991e2d1b9d881cbb"
+    ],
+    "output": "1. Start at base and move to the shelf.\n2. Inspect the cup with your camera.\n3. Report what you observe.",
+    "model": "HuggingFaceTB/SmolLM2-360M-Instruct",
+    "model_revision": "a10cc1512eabd3dde888204e902eca88bddb4951",
+    "system_prompt": "You are helping a mobile robot. It starts at base. It can navigate to base, shelf or desk, inspect a known object, report observations, or stop. There is a cup on the shelf and a book on the desk. The robot has a camera and wheels but no arm or gripper. It cannot pick up or carry objects. Suggest a short plan using only these capabilities. If information is missing, ask a specific clarification question. If the task is impossible for this robot, explain why. Use at most four short sentences.",
+    "model_input": "Starting at base, plan how you would navigate to the shelf, inspect the cup with your camera, and report what you observe. Describe the plan without guessing what is inside the cup.",
+    "image_sha256": null,
+    "image_preprocessing": null,
+    "generated_tokens": 30,
+    "max_new_tokens": 96,
+    "generation_seconds": 20.594,
+    "truncated": false,
+    "decoding": "greedy",
+    "device": "cpu",
+    "live_inference": true,
+    "library_versions": {
+      "torch": "2.8.0+cpu",
+      "transformers": "4.57.1"
+    },
+    "output_constraint": null,
+    "completed_at": "2026-11-09T00:34:16.003030+00:00"
+  }
+}

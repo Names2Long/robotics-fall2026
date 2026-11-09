@@ -1,0 +1,10 @@
+{
+  "job_id": "19eab07c380b4b8da54b4d27bf4d5019",
+  "kind": "language",
+  "case": "clear",
+  "prompt": "Go to the shelf, inspect the cup, and report what you observe.",
+  "phase": "baseline",
+  "parent_id": null,
+  "requested_at": "2026-11-09T00:30:44.414146+00:00",
+  "comparison_ids": []
+}

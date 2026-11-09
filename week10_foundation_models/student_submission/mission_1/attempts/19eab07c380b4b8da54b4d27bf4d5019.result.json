@@ -1,0 +1,33 @@
+{
+  "status": "complete",
+  "record": {
+    "job_id": "19eab07c380b4b8da54b4d27bf4d5019",
+    "kind": "language",
+    "case": "clear",
+    "prompt": "Go to the shelf, inspect the cup, and report what you observe.",
+    "phase": "baseline",
+    "parent_id": null,
+    "requested_at": "2026-11-09T00:30:44.414146+00:00",
+    "comparison_ids": [],
+    "output": "The robot starts at the shelf and moves towards the cup. It checks the cup and reports that it is empty.",
+    "model": "HuggingFaceTB/SmolLM2-360M-Instruct",
+    "model_revision": "a10cc1512eabd3dde888204e902eca88bddb4951",
+    "system_prompt": "You are helping a mobile robot. It starts at base. It can navigate to base, shelf or desk, inspect a known object, report observations, or stop. There is a cup on the shelf and a book on the desk. The robot has a camera and wheels but no arm or gripper. It cannot pick up or carry objects. Suggest a short plan using only these capabilities. If information is missing, ask a specific clarification question. If the task is impossible for this robot, explain why. Use at most four short sentences.",
+    "model_input": "Go to the shelf, inspect the cup, and report what you observe.",
+    "image_sha256": null,
+    "image_preprocessing": null,
+    "generated_tokens": 24,
+    "max_new_tokens": 96,
+    "generation_seconds": 26.403,
+    "truncated": false,
+    "decoding": "greedy",
+    "device": "cpu",
+    "live_inference": true,
+    "library_versions": {
+      "torch": "2.8.0+cpu",
+      "transformers": "4.57.1"
+    },
+    "output_constraint": null,
+    "completed_at": "2026-11-09T00:31:10.881877+00:00"
+  }
+}

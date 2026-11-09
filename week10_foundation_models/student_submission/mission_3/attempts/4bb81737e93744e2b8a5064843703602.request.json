@@ -1,0 +1,25 @@
+{
+  "job_id": "4bb81737e93744e2b8a5064843703602",
+  "kind": "language",
+  "case": "route",
+  "prompt": "Reach the blue target crate at (11,1). From the start at (1,7), move UP to row 1, RIGHT to column 7, DOWN to row 7, RIGHT to column 11, then UP to row 1. Follow this detour around the two walls. Use current coordinates to decide which part of the route remains. Stop only at (11,1).",
+  "phase": "baseline",
+  "parent_id": null,
+  "requested_at": "2026-11-09T00:48:35.875663+00:00",
+  "comparison_ids": [],
+  "task": "robot",
+  "robot_state": {
+    "position": [
+      1,
+      7
+    ],
+    "step": 0,
+    "history": [],
+    "finished": false,
+    "goal_reached": false,
+    "first_goal_step": null,
+    "last_feedback": "No previous action.",
+    "last_decision": null
+  },
+  "simulator_contract": "8da30a943bd97ee39237aa05e8e6800fecdecbef3ce692d7d4e48f851679060f"
+}

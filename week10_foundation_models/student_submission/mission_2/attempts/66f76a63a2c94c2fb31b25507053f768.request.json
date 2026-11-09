@@ -1,0 +1,14 @@
+{
+  "job_id": "66f76a63a2c94c2fb31b25507053f768",
+  "kind": "vision",
+  "case": "custom",
+  "prompt": "Decide. The robot\u2019s goal is to mark a circle on a flat wooden workpiece. Which tool in the photograph could help it mark the circle? Describe the visible features that support your choice. Then explain what the robot would need to check before using the tool, including whether it can grasp and control it.",
+  "phase": "custom",
+  "parent_id": null,
+  "requested_at": "2026-11-09T00:38:30.342152+00:00",
+  "comparison_ids": [
+    "aeb89b2a501b41acbf0e2bf90c42463b",
+    "2a113fad487a445ca8b1db971598337a",
+    "e709670efc464e17806a0235dc79d97d"
+  ]
+}

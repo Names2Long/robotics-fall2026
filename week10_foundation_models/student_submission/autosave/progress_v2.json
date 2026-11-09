@@ -1,0 +1,69 @@
+{
+  "stage": "final_submission",
+  "responses": {
+    "m1_analysis": "Yes.,The original answer claimed the cup was empty before the robot had inspected it. My revised request produced a plan that leaves the cup\u2019s contents unknown until inspection. The proposed actions fit the robot\u2019s capabilities because it can use its wheels to travel from base to the shelf, inspect the cup with its camera, and report what it sees.",
+    "m2_analysis": "I chose Decide. The revised answer repeated the goal of marking a circle, but it still recommended a tape measure, just as the original answer did. The photograph shows a metal drawing compass in the foreground, which could be used to mark a circle. The revised answer also left out how the robot would check whether it could grasp and control the tool. It recognized the goal, but it did not make a better tool choice.",
+    "m3_analysis": "My prompt produced the same path as the supplied \u201cDescribe the detour\u201d prompt. In both runs, the robot moved UP six times from (1,7) to (1,1). My prompt told it to turn RIGHT there, and that cell was free. Instead, it alternated between trying UP into the wall and choosing STOP. Both runs ended at (1,1) after 50 actions, with 22 blocked moves, 22 STOP steps, and no goal visit. My revision did not help in this trial. The simulator prevented the robot from entering the wall, but the model still had to recognize when to change direction. Giving it the current coordinates and a valid route did not guarantee it would make that turn.",
+    "final_synthesis": "Across the three missions, clearer prompts helped the models give more relevant answers, but they did not guarantee accurate observations or correct actions.\n\nIn Mission 1, the model said the robot started at the shelf and found the cup empty. The capability card placed the robot at base, and no camera observation had been made. My revised request produced a feasible plan, navigate to the shelf and inspect the cup. That answer left the contents unknown, which was appropriate because the robot had not actually moved or inspected anything.\n\nIn Mission 2, the photograph stayed the same while the task description changed. The original Decide answer chose a measuring tape without knowing the job. When I specified that the goal was to mark a circle, the model chose a compass, matching the two legged metal tool visible in the foreground. Its explanation described what a compass does, though, rather than pointing to a feature it could see. A correct choice did not settle whether the robot could grasp or use the tool.\n\nIn Mission 3, I could check the proposed actions against recorded positions. My prompt and the supplied detour prompt produced identical paths, six successful UP moves to (1,1), followed by 22 blocked UP attempts and 22 STOP actions. Neither run reached the goal. The clearest test came at (1,1). The cell to the right was free, and my prompt said to turn RIGHT, but the model never made that turn. The wall check prevented an invalid move. It did not choose a useful one.",
+    "final.course_reflection": "What stood out to me was the difference between reading a models answer and checking what happened. When the model said the cup was empty, the sentence sounded like a report from a robot that had inspected it. Looking back at the setup, I realized the model had only received a text description. That made me ask a question I want to keep using in robotics, what evidence would the robot actually need before it could make that claim?\nThe maze was the most surprising part for me. I expected that naming the exact turn would help. Instead, the robot reached (1,1) and repeated the same blocked move and pause as before. Watching that happen made the action record more useful to me than the wording of the prompt. I could point to the exact place where the instruction and the behavior stopped matching.\n\nThe activity made me more interested in testing how robots use sensor information and feedback. For a robot working around people, saying \u201cI still need to inspect that\u201d can be more useful than giving a confident guess. I would want to design a system that makes it clear when it is proposing a plan, when it has evidence, and when an action has actually succeeded.\n"
+  },
+  "student": {
+    "name": "Ishraq Chowdhury ",
+    "email": "ASIL.CHOWDHURY41@stu-mail.hunter.cuny.edu"
+  },
+  "tutorial_step": 5,
+  "tutorial_reviewed": 6,
+  "controls": {
+    "control_ground_instruction": "Point to the blue cup",
+    "control_adapt_instruction": "Move the blue cup to the tray",
+    "control_adapt_scenario": "The request does not identify the intended cup",
+    "control_adapt_choice": "Zero-shot prompting",
+    "control_movement_angle": 0,
+    "control_chunk_hz": 10,
+    "control_chunk_size": 4,
+    "control_movement_token": 191,
+    "control_validate_conf_navigate": 0.9,
+    "control_validate_age_navigate": 0.1,
+    "control_validate_case": "Navigate to the shelf",
+    "control_live_language_active": "3bb1ea20b16f4665800f9db9944973c6",
+    "control_live_language_runs": [
+      "19eab07c380b4b8da54b4d27bf4d5019",
+      "0fbebfcc57824abe95aa48f77e169102",
+      "9bae47f9c6924629991e2d1b9d881cbb",
+      "3bb1ea20b16f4665800f9db9944973c6"
+    ],
+    "control_live_language_custom_prompt": "Starting at base, plan how you would navigate to the shelf, inspect the cup with your camera, and report what you observe. Describe the plan without guessing what is inside the cup.",
+    "control_live_vision_active": "66f76a63a2c94c2fb31b25507053f768",
+    "control_live_vision_runs": [
+      "aeb89b2a501b41acbf0e2bf90c42463b",
+      "2a113fad487a445ca8b1db971598337a",
+      "e709670efc464e17806a0235dc79d97d",
+      "66f76a63a2c94c2fb31b25507053f768"
+    ],
+    "control_live_vision_custom_prompt": "Decide. The robot\u2019s goal is to mark a circle on a flat wooden workpiece. Which tool in the photograph could help it mark the circle? Describe the visible features that support your choice. Then explain what the robot would need to check before using the tool, including whether it can grasp and control it.",
+    "control_robot_active": "b65a9762e071492999092212311bc124",
+    "control_robot_runs": [
+      "dde2b82afaff41e19aa9b26fbdb41cca",
+      "6a1beb0f4b74428eae541639b281214c",
+      "4bb81737e93744e2b8a5064843703602",
+      "b65a9762e071492999092212311bc124"
+    ],
+    "control_robot_custom_prompt": "Use your current (column,row). In column 1, go UP to row 1. On row 1, go RIGHT to column 7. At (7,1), turn DOWN and follow column 7 to row 7. On row 7, go RIGHT to column 11. In column 11, go UP to (11,1). At (11,1), choose STOP each remaining step."
+  },
+  "guided_version": 4,
+  "guided_seen": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "response_widgets": [
+    "m1_analysis",
+    "m2_analysis",
+    "m3_analysis",
+    "final_synthesis"
+  ],
+  "version": 2
+}
