@@ -1,0 +1,6 @@
+{
+  "case": "clear",
+  "phase": "CONFIRM",
+  "message": "I heard “[target] cup” Record and send “Confirm,” then check the transcript. Click “Apply recognized permission” when it matches. I’ll wait here until you approve.",
+  "rationale": "After I sent “Confirm,” the notification disappeared too fast for me to read. I wasn’t sure if the robot had started moving. I wanted the message to make it clear that I still had to approve what the robot heard."
+}

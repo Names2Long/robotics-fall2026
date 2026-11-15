@@ -1,0 +1,1 @@
+My controller requires confirmation before the robot starts moving. In the “Confirmation required” trace, a TICK arrived while the robot was in CONFIRM. The controller returned hold, and the phase stayed CONFIRM. The robot waits for the person to confirm the cup before starting the trip.
