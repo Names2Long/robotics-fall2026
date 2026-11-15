@@ -1,114 +1,71 @@
-# Week 11 — Human–Robot Interaction Evaluation
+# Lab 10 · Voice, Shared Control, and Assistive Handover
 
-An individual ROS 2 + Streamlit lab organized around a complete formative design cycle:
+Work individually with a TurtleBot3 in Gazebo. Build its interaction controller in the guide, give spoken requests through your microphone, and compare manual teleoperation, voice shared autonomy, and supplied autonomous execution.
 
-> prototype → user test → evidence → redesign → matched retest
+## Start
 
-Students temporarily work in pairs so each can serve as the other's participant. All implementations, observations, analysis, artifacts, and submissions remain individual.
-
-## Learning sequence
-
-1. **Concepts:** intention visibility, feedback, listening clarity, predictability, recoverability, accessibility, and human control.
-2. **Protocol and preflight:** establish voluntary participation, data minimization, stop authority, and a motion-disabled ROS test environment.
-3. **Mission 1 — Prototype:** inspect and dry-run a stateful interaction that announces intent, approaches, listens, confirms, acts, times out safely, accepts correction/cancellation, and exposes an emergency stop.
-4. **Mission 2 — Baseline evaluation:** run five scripted scenarios with one peer and record task outcomes, comprehension, feedback, recovery, predictability, access barriers, timing, and non-identifying notes.
-5. **Mission 3 — Redesign and retest:** implement at least two evidence-based changes and repeat the same five scenarios with the same random participant code when possible.
-6. **Synthesis:** explain what the evidence supports, what it does not support, and what should change next.
-
-ROS topics are appropriate here because interaction status and commands are asynchronous streams shared by interface, robot, and recorder nodes; see the official ROS 2 [interfaces documentation](https://docs.ros.org/en/jazzy/How-To-Guides/Topics-Services-Actions.html). The prototype publishes velocity using the standard [`geometry_msgs/Twist`](https://docs.ros.org/en/jazzy/p/geometry_msgs/msg/Twist.html) message, but keeps it on `/hri/cmd_vel` and sets motion off during peer testing.
-
-## Safety and participant protocol
-
-This is a short classroom usability exercise, not human-subjects research and not evidence about a population. Follow `assets/protocol/participant_script.md`:
-
-- participation is voluntary and may stop at any time;
-- record only a random code beginning with `P-`;
-- collect no name, demographic, disability, medical, audio, video, photo, or other identifying data;
-- describe interface behavior, not participant traits;
-- keep physical motion disabled unless the instructor explicitly supervises it; and
-- each student uses and submits only their own evaluation data.
-
-## Shared ROS environment
-
-Use the course container configured once in Week 1. It provides ROS 2 Jazzy, colcon, and Streamlit on Windows, macOS, and Linux. No physical robot is required. See [`../ROS_DOCKER_SETUP.md`](../ROS_DOCKER_SETUP.md).
-
-## Run
-
-Windows:
+From the course repository on Windows, run the usual launcher.
 
 ```powershell
-.\scripts\ros_course.ps1 lab week11_hri_evaluation
+powershell -ExecutionPolicy Bypass -File .\scripts\ros_course.ps1 lab week11_hri_evaluation
 ```
 
-macOS/Linux:
+On macOS or Linux, run the following command.
 
 ```bash
-./scripts/ros_course.sh lab week11_hri_evaluation
+bash scripts/ros_course.sh lab week11_hri_evaluation
 ```
 
-Then, in the browser desktop terminal:
+The launcher builds the Lab 10 ROS package and prepares the local speech recognizer. The first speech-package installation needs an internet connection. Open the guide at **http://localhost:8501** in your computer's browser and the virtual desktop at **http://localhost:6080/vnc.html?autoconnect=1&resize=remote**. Use the microphone recorder in your computer's browser and allow microphone access.
+
+On the preflight page, launch the world in Terminal 1 of the virtual desktop.
 
 ```bash
-bash scripts/course_preflight.sh
-bash scripts/launch_interaction.sh
+cd /workspace/week11_hri_evaluation
+bash scripts/launch_handover.sh
 ```
 
-The guide is at `http://localhost:8501`; the launcher selects `ROS_DOMAIN_ID=31`, sources the Week 11 workspace, and keeps motion disabled by default.
+Keep Terminal 1 running. Gazebo opens the cup delivery room with a green person station, red and blue cup stations, and a yellow correction checkpoint. Refresh the guide's ROS checks. It must receive fresh odometry from the world. Record the example phrase, play the clip, and check its transcript.
 
-Send commands from another sourced terminal:
+If the microphone recorder cannot start, allow access in the browser site settings and operating system privacy settings. Quiet or silent playback usually means the wrong microphone is selected. A clear clip with no recognized phrase means the decoder could not match its limited English vocabulary. Try the short example phrase. Recognition runs in the course container. The browser sends microphone recordings to that local guide.
+
+## Four guided activities
+
+1. Follow intended speech through transcription, parsing, clarification, and confirmation. Compare visible cup choices and the selected interaction phase.
+2. Step through fetching, offering, and transferring in a teaching diagram. Compare early readiness, readiness during an offer, timeout, and cancellation. Read the event trace to see which rule permitted or prevented transfer.
+3. Edit the starter Python directly in the guide. Save the corrected readiness guard, rerun the checks, and compare the expected and observed transitions.
+4. Redirect the same task in each control mode. Inspect who changes the goal, who chooses the movement, and when a fresh confirmation is required.
+
+## Missions
+
+**Mission 1** completes the interaction controller in the guide. Check its rules in three groups, then run the full scripted suite. Test the saved source on the Gazebo robot and retain a ROS trial before saving the mission.
+
+**Mission 2** runs four microphone trials with the actual robot. Try a clear request, an ambiguous request followed by a named cup, a correction, and a cancellation. The guide records intended words, recognized text, ROS events, odometry poses, and the observed result. Review spoken Confirm and Ready before applying them. Redesign feedback from one observed problem and repeat the matching trial.
+
+**Mission 3** compares normal and changed-goal deliveries in manual, shared, and autonomous control. All six trials use the same room, initial position, checkpoint, readiness rule, and Stop control.
+
+Before each fresh trial, finish or archive the old attempt and reset the world in Terminal 2.
 
 ```bash
-ros2 topic pub --once /hri/command std_msgs/msg/String "{data: 'bring the blue cup'}"
-ros2 topic pub --once /hri/command std_msgs/msg/String "{data: 'yes'}"
-ros2 topic pub --once /hri/emergency_stop std_msgs/msg/Bool "{data: true}"
+cd /workspace/week11_hri_evaluation
+bash scripts/reset_handover.sh
 ```
 
-The prototype publishes:
-
-```text
-/hri/state       current interaction state
-/hri/display     visible user-facing feedback
-/hri/cmd_vel     isolated velocity proposal; zero when motion is disabled
-```
-
-It subscribes to `/hri/command`, the alternate `/hri/text_command`, and `/hri/emergency_stop`. Both command modalities enter the same state machine. The state/display topics use reliable, transient-local QoS so a newly opened display can receive the latest status. The command and stop inputs use ordinary reliable topic delivery.
-
-## Evidence and redesign
-
-Complete `assets/protocol/blank_trials.json` for the baseline. Each of the five rows must contain:
-
-- task success;
-- intent and listening comprehension;
-- recovery without facilitator help;
-- 1–5 predictability and feedback-clarity ratings;
-- access barrier and safety-stop flags;
-- completion time; and
-- a short, non-identifying observation.
-
-The redesign evidence contains `baseline`, `redesign`, and a `design_changes` list. Evaluate files offline with:
+For manual control, open Terminal 3 and run the keyboard controller.
 
 ```bash
-python3 scripts/evaluate_trials.py baseline runtime/baseline.json --output runtime/baseline_checked.json
-python3 scripts/evaluate_trials.py redesign runtime/comparison.json --output runtime/comparison_checked.json
+cd /workspace/week11_hri_evaluation
+bash scripts/manual_control.sh
 ```
 
-Passing requires five matched scenarios, no safety stops, no access barriers in the retest, no task-success regression, and improvement in at least two target metrics. This is a design gate, not proof of general usability; the same participant may perform better from learning alone.
+Focus Terminal 3 and use W/S/A/D to drive or turn. Hold the key for repeated short commands. Space stops and Q exits. Keep the guide visible and open. Dock at the colored pad, then use the guide to load the cup. Return to the green pad, offer the cup, and signal readiness. The guide and Gazebo controller stop motion when commands, the guide heartbeat, or odometry become stale.
 
-## Submission
+The mobile robot uses a simulated tray state for cup loading and transfer. Navigation is executed by Gazebo physics and measured through ROS odometry. Students implement the interaction rules that authorize movement and transfer.
 
-Submit `student_submission/` and the individual Git commit. Include raw/checked JSON, ROS event traces, baseline and redesign configuration, state diagrams/screenshots, explanations, final synthesis, and `manifest.json`. Inspect the commit once more for identifying data before pushing.
+## Save and submit
 
-## Maintainer checks
+Submitted commands and robot observations save automatically. Reopening the guide requires a fresh microphone and ROS check. If the ROS trial was lost because the world or controller restarted, archive the disconnected attempt and collect a new trial. Resetting Gazebo during a trial invalidates that attempt.
 
-```bash
-python3 app.py --smoke-test
-python3 -m unittest discover -s tests -v
-python3 -m compileall -q .
-```
+Use Download draft backup to retain unfinished work and archived runs. Review the final readiness table, complete the technical synthesis and separate course reflection, then save and download the complete submission. Inspect the saved source, scripted checks, ROS trial evidence, transcripts, feedback redesign, and mode comparisons. Commit and push the submission folder to your fork and submit the commit link.
 
-ROS integration additionally requires `colcon build --symlink-install` under Jazzy.
-
-
-## Required final reflection
-
-After the technical work, complete the individual [final reflection](../FINAL_REFLECTION.md). Respond to any or all of the five prompts in 1–300 words. A blank response or a response over 300 words cannot finalize the submission. The app saves the response as `student_submission/final_reflection.md`, separate from technical syntheses and mission explanations.
+[Detailed outline](OUTLINE.md)

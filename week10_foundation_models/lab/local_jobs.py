@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 
 from lab.evidence import ROOT, root, write_json, read_json, atomic
 from lab.local_config import MODEL_CONFIG, LANGUAGE_TASKS, LANGUAGE_SYSTEM, VISION_TASKS, VISION_PREPROCESSING, model_python, model_dir, scene_path
+from lab.worker_lock import worker_lock
 
 _workers = {}
 _setup = None
@@ -42,6 +43,9 @@ def _ensure_worker(kind):
         if worker is None or worker.poll() is not None:
             queue = queue_path(kind)
             queue.mkdir(parents=True, exist_ok=True)
+            with worker_lock(queue) as acquired:
+                if not acquired:
+                    return
             env = {**os.environ, "HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1", "TOKENIZERS_PARALLELISM": "false"}
             with (queue / "worker.log").open("a") as log:
                 _workers[kind] = subprocess.Popen([str(model_python()), "-m", "lab.local_inference", kind, str(queue)], cwd=ROOT,
@@ -92,12 +96,14 @@ def job_status(kind, job_id):
             if result:
                 mission = "mission_3"
     if result:
+        if result.get("status") == "cancelled":
+            result = {**result, **cancellation_status(queue / (job_id + ".cancel"))}
         destination = root() / mission / "attempts" / (job_id + ".result.json")
         if request.get("phase") != "preflight" and not destination.exists():
             write_json(destination, result)
         return result
     if (queue / (job_id + ".cancel")).exists():
-        return {"status": "cancelled", "error": "This run was cancelled. You can start a new run."}
+        return cancellation_status(queue / (job_id + ".cancel"))
     request_path = queue / (job_id + ".request.json")
     if not request_path.exists():
         return {"status": "error", "error": "Run file is unavailable. Run this experiment again. Earlier checked evidence is retained."}
@@ -108,15 +114,20 @@ def job_status(kind, job_id):
         write_json(queue / (job_id + ".result.json"), failure)
         return failure
     elapsed = time.time() - request_path.stat().st_mtime
-    if elapsed > 300:
-        cancel_job(kind, job_id)
-        return {"status": "error", "error": "This run exceeded five minutes. Run it again. Check Preflight if the problem continues."}
     _ensure_worker(kind)
-    return {**read_json(queue / (job_id + ".status.json"), {"status": "queued"}), "elapsed": round(elapsed, 1)}
+    progress = read_json(queue / (job_id + ".status.json"), {"status": "queued"})
+    return {**progress, "elapsed": round(elapsed, 1)}
 
 
 def cancel_job(kind, job_id):
-    atomic(queue_path(kind) / (job_id + ".cancel"), b"cancel")
+    write_json(queue_path(kind) / (job_id + ".cancel"), {"reason": "student"})
+
+
+def cancellation_status(path):
+    reason = read_json(path, {}).get("reason")
+    message = ("You stopped this run. Start a new run when ready." if reason == "student" else
+               "This earlier attempt stopped. Older lab versions also stopped long runs automatically. Start a new run with the updated lab.")
+    return {"status": "cancelled", "error": message}
 
 
 def record(kind, job_id, mission=None):

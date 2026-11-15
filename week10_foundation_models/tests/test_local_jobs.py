@@ -2,6 +2,7 @@ import copy
 import os
 from pathlib import Path
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 
@@ -89,6 +90,49 @@ class LocalJobTests(unittest.TestCase):
         job_status("language", job)
         self.assertTrue((root() / "mission_3" / "attempts" / (job + ".result.json")).exists())
         self.assertFalse((root() / "mission_1" / "attempts" / (job + ".result.json")).exists())
+
+    def test_robot_progress_beyond_five_minutes_does_not_cancel_the_run(self):
+        from simulation.robot_room import initial_state
+        job = start_job("language", "goal", "Reach the target.", robot_state=initial_state())
+        queue = self.base / "language"
+        request = queue / (job + ".request.json")
+        old = time.time()-901
+        os.utime(request, (old, old))
+        write_json(queue / (job + ".status.json"), {"status": "generating", "step": 20, "completed_steps": 19})
+        result = job_status("language", job)
+        self.assertEqual(result["status"], "generating")
+        self.assertEqual(result["completed_steps"], 19)
+        self.assertFalse((queue / (job + ".cancel")).exists())
+
+    def test_cancellation_distinguishes_the_button_from_old_markers(self):
+        job = start_job("language", "clear", "A request")
+        cancel_job("language", job)
+        self.assertIn("You stopped", job_status("language", job)["error"])
+        atomic(self.base / "language" / (job + ".cancel"), b"cancel")
+        self.assertIn("Older lab versions", job_status("language", job)["error"])
+
+    def test_worker_lock_survives_guide_restart_and_releases(self):
+        from lab.worker_lock import worker_lock
+        with worker_lock(self.base / "language") as first:
+            self.assertTrue(first)
+            with worker_lock(self.base / "language") as second:
+                self.assertFalse(second)
+        with worker_lock(self.base / "language") as recovered:
+            self.assertTrue(recovered)
+
+    def test_new_worker_recovers_an_abandoned_claim(self):
+        from lab.local_inference import serve
+        queue = self.base / "language"
+        queue.mkdir()
+        (queue / "recovery.claimed").mkdir()
+        write_json(queue / "recovery.request.json", {"job_id": "recovery", "kind": "language"})
+        with patch("lab.local_inference.load_model", return_value=("processor", "model")), \
+                patch("lab.local_inference.generate", return_value={"output": "Test double"}) as generation, \
+                patch("lab.local_inference.time.monotonic", side_effect=[0, 1, 2, 3, 604]), \
+                patch("lab.local_inference.time.sleep"):
+            serve("language", queue)
+        generation.assert_called_once()
+        self.assertEqual(read_json(queue / "recovery.result.json")["status"], "complete")
 
 
 if __name__ == "__main__":

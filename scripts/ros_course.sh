@@ -8,12 +8,12 @@ command="${1:-start}"
 case "$command" in
   setup)
     docker compose up -d --build
-    docker compose exec course-ros course-build-workspaces
-    docker compose exec course-ros course-doctor
+    docker compose exec course-ros bash /workspace/docker/scripts/course-build-workspaces
+    docker compose exec course-ros bash /workspace/docker/scripts/course-doctor
     echo "Setup complete. Open http://localhost:6080/vnc.html?autoconnect=1&resize=remote"
     ;;
   start) docker compose up -d ;;
-  build) docker compose exec course-ros course-build-workspaces ;;
+  build) docker compose exec course-ros bash /workspace/docker/scripts/course-build-workspaces ;;
   lab)
     lab="${2:-}"
     [[ -n "$lab" ]] || { echo "Provide a lab directory, for example: week01_ros_foundations" >&2; exit 2; }

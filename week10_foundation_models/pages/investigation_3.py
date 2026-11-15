@@ -64,7 +64,19 @@ def render(st):
             latest = job_status("language", active)
             if latest.get("status") not in ("queued", "loading", "generating"):
                 st.rerun()
-            st.info(f"Running the robot: action {latest.get('step', 1)} of {MAX_STEPS}. Last action: {latest.get('last_action', 'None yet')}. {latest.get('elapsed', 0):.0f} seconds elapsed.")
+            phase = latest.get("status")
+            if phase == "loading":
+                st.info("Loading the local language model. Its weights stay in memory for later runs.")
+            elif phase == "queued":
+                st.info("Waiting for the local language model to finish its current request.")
+            else:
+                st.info(f"Running the robot: action {latest.get('step', 1)} of {MAX_STEPS}. Last action: {latest.get('last_action', 'None yet')}. {latest.get('elapsed', 0):.0f} seconds elapsed.")
+                completed = latest.get("completed_steps", 0)
+                st.progress(completed / MAX_STEPS, text=f"{completed} of {MAX_STEPS} actions completed")
+                average = latest.get("mean_action_seconds")
+                if average and completed < MAX_STEPS:
+                    remaining = average * (MAX_STEPS-completed)
+                    st.caption(f"Recent average {average:.1f} seconds per action. About {remaining/60:.1f} minutes remaining at that rate. This estimate changes as the model runs.")
             if latest.get("robot_state"):
                 st.image(room_svg(latest["robot_state"], {"path":latest["path"]}), width=505)
             if st.button("Cancel this experiment"):
@@ -77,6 +89,7 @@ def render(st):
     baselines = {case: next((r for r in reversed(rows) if r["record"]["case"] == case and r["record"].get("phase") == "baseline"), None) for case in SCENARIOS}
     st.subheader("1. Run all three supplied prompts")
     st.write("For each prompt, select Run robot with this prompt once. The model chooses and the simulator checks every action automatically. Watch the path, then compare goal visits, blocked moves and pauses across all 50 steps.")
+    st.caption("Each experiment makes 50 local model calls. The first run also loads the weights. Watch the completed-action count to distinguish a slow run from one that has stopped. A run can continue beyond five minutes while it makes progress.")
     for case,item in SCENARIOS.items():
         st.markdown("### " + item["label"])
         st.write(item["request"])

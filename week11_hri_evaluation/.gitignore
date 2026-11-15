@@ -1,10 +1,9 @@
-.streamlit/
 __pycache__/
 .pytest_cache/
-runtime/
+student_submission/.lab10-progress*.json
+student_submission/**/*.tmp
 ros2_ws/build/
 ros2_ws/install/
 ros2_ws/log/
-student_submission/*
-!student_submission/.gitkeep
-
+ros2_ws/build_hri/
+ros2_ws/install_hri/

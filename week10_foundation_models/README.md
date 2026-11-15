@@ -61,6 +61,12 @@ Finalization writes one complete ZIP and a SHA-256 manifest. Inspect the files, 
 
 Cancelled, empty or failed generations do not satisfy trial requirements. Incorrect but successfully generated answers do count, since evaluating their limitations is part of the experiment. The UI shows progress and permits cancellation. Loaded models stay available in local worker processes until idle shutdown.
 
+Mission 3 makes 50 separate local model calls for each prompt. Its progress display shows completed actions and a remaining-time estimate based on recent actions. A progressing run can continue beyond five minutes. Only the cancellation control marks a new run as student-cancelled. A single model generation retains its three-minute timeout and reports that failure as a timeout.
+
+The robot worker reuses the model's calculation for exactly matching input-prefix tokens between steps. Every action still comes from a new local inference on the current state. The saved evidence includes the exact input and the number of reused prefix tokens.
+
+After updating from a version that reported unexpected cancellations, restart the course container with `docker compose restart course-ros`, then launch Lab 9 again using the course launcher. This stops old worker processes while retaining the container's installed models and the repository's student submissions. Start a fresh attempt for a cancelled experiment. Earlier completed evidence remains available.
+
 ## Maintainer verification
 
 ```bash

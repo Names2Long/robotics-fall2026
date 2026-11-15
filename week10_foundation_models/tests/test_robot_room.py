@@ -74,7 +74,7 @@ class RobotRoomTests(unittest.TestCase):
         from lab.local_inference import rollout
         from simulation.robot_room import contract, SCENARIOS
         actions = ["LEFT","STOP","UP"] + ["STOP"] * (MAX_STEPS-3)
-        def fake_generate(kind,request,loaded,status_path,cancel_path):
+        def fake_generate(kind,request,loaded,status_path,cancel_path,prefix_cache=None):
             index = request["robot_state"]["step"]
             return robot_model("goal",actions[index],request["robot_state"],prompt=request["prompt"])
         request = {"job_id":"worker-test","kind":"language","task":"robot","case":"goal",

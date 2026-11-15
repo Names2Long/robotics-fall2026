@@ -16,7 +16,7 @@ Weeks 1, 3, 6, 8, 9, and 11 reuse one cross-platform Docker environment. Student
 - [Week 8 overview](week08_vision_perception/OVERVIEW.md) — individual ROS 2 lab comparing classical and learned vision and connecting perception to bounded behavior.
 - [Week 9 overview](week09_planning_navigation/OVERVIEW.md): Lab 8 implements and compares grid searches, executes seven planners on two maps, and evaluates human-aware potential fields.
 - [Lab 9 / Week 10 overview](week10_foundation_models/OVERVIEW.md): guided model literacy, live local language and vision experiments, prompt comparisons and model-directed movement in a 2D robot maze.
-- [Week 11 overview](week11_hri_evaluation/OVERVIEW.md) — individual ROS 2 lab using paired participation for baseline interaction evaluation, evidence-driven redesign, and matched retesting.
+- [Lab 10 / Week 11 overview](week11_hri_evaluation/OVERVIEW.md) covers individual voice interaction, assistive handover, and manual, shared, and autonomous control.
 - [Week 12 overview](week12_responsible_robotics/OVERVIEW.md) — individual, self-contained lab translating privacy, fairness, safety, accessibility, and human-control requirements into tested system behavior.
 - [Week 14 overview](week14_pendulum_rl/OVERVIEW.md) — individual, self-contained lab for reinforcement-learning using a pendulum.
 - `lab-template/` — reusable architecture for additional labs.

@@ -22,6 +22,13 @@ esac
 
 root="/workspace/$lab"
 setup="$root/ros2_ws/install/setup.bash"
+if [[ "$lab" == week11_hri_evaluation ]]; then
+  sed -i 's/\r$//' "$root/scripts/"*.sh
+  bash "$root/scripts/course_preflight.sh"
+  setup="$root/ros2_ws/install_hri/setup.bash"
+  export WEEK11_LAB_ROOT="$root"
+  export PYTHONPATH="$root${PYTHONPATH:+:$PYTHONPATH}"
+fi
 if [[ ! -f "$root/app.py" ]]; then
   echo "The lab guide is missing: $root/app.py. Update the course checkout." >&2
   exit 3

@@ -24,7 +24,9 @@ check "OpenCV and NumPy" python -c 'import cv2, numpy'
 check "Browser desktop display" xdpyinfo -display "${DISPLAY:-:1}"
 
 for lab in week01_ros_foundations week03_motion_frames_ai week06_slam_localization week08_vision_perception week09_planning_navigation week11_hri_evaluation; do
-  check "$lab workspace" test -f "/workspace/$lab/ros2_ws/install/setup.bash"
+  install_dir=install
+  [[ "$lab" == week11_hri_evaluation ]] && install_dir=install_hri
+  check "$lab workspace" test -f "/workspace/$lab/ros2_ws/$install_dir/setup.bash"
 done
 
 if (( failures > 0 )); then

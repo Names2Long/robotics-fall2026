@@ -13,6 +13,10 @@ labs=(
 )
 
 for lab in "${labs[@]}"; do
+  if [[ "$lab" == week11_hri_evaluation ]]; then
+    bash /workspace/week11_hri_evaluation/scripts/course_preflight.sh
+    continue
+  fi
   workspace="/workspace/$lab/ros2_ws"
   if [[ ! -d "$workspace/src" ]]; then
     echo "Missing workspace: $workspace" >&2
